@@ -28,6 +28,11 @@
 #include <opendavinci/odcore/data/Container.h>
 #include <opendavinci/odcore/wrapper/SharedMemory.h>
 
+#include "opendavinci/odcore/base/module/TimeTriggeredConferenceClientModule.h"
+#include "opendavinci/odcore/data/TimeStamp.h"
+#include "automotivedata/GeneratedHeaders_AutomotiveData.h"
+#include "opendavinci/GeneratedHeaders_OpenDaVINCI.h"
+
 namespace scaledcars {
 namespace perception {
 
@@ -36,7 +41,7 @@ using namespace std;
 /**
  * Time-triggered example.
  */
-class Example : public odcore::base::module::DataTriggeredConferenceClientModule {
+class Example : public odcore::base::module::TimeTriggeredConferenceClientModule {
    private:
     Example(const Example & /*obj*/) = delete;
     Example &operator=(const Example & /*obj*/) = delete;
@@ -52,20 +57,33 @@ class Example : public odcore::base::module::DataTriggeredConferenceClientModule
 
     virtual ~Example();
 
-    virtual void nextContainer(odcore::data::Container &c);
 
+  odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode body();
+   protected:
+   bool readSharedImage(odcore::data::Container &c);
    private:
     void setUp();
     void tearDown();
 
    private:
     void processImage();
+    bool SIMULATOR;
 
    private:
+  
     bool m_hasAttachedToSharedImageMemory;
     std::shared_ptr<odcore::wrapper::SharedMemory> m_sharedImageMemory;
+      IplImage *m_image;
+      //cv::Mat m_image;
+      bool m_debug;
+    CvFont m_font;
+    
+     odcore::data::TimeStamp m_previousTime;
+     double m_eSum;
+     double m_eOld;
+     automotive::VehicleControl m_vehicleControl;
 
-    IplImage *m_image;
+  
 };
 }
 } // scaledcars::perception
