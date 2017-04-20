@@ -62,6 +62,8 @@ namespace automotive {
             int stageMoving = 0;
             int stageMeasuring = 0;
 
+            VehicleControl vc;
+
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
                 // 1. Get most recent vehicle data:
                 Container containerVehicleData = getKeyValueDataStore().get(automotive::VehicleData::ID());
@@ -72,17 +74,16 @@ namespace automotive {
                 SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
 
                 // Create vehicle control data.
-                VehicleControl vc;
 
                 // Moving state machine.
                 if (stageMoving == 0) {
                     // Go forward.
-                    vc.setSpeed(1);
+                    vc.setSpeed(1.5);
                     vc.setSteeringWheelAngle(0);
                 }
                 if ((stageMoving > 0) && (stageMoving < 20)) {
                     // Move slightly forward.
-                    vc.setSpeed(1);
+                    vc.setSpeed(0);
                     vc.setSteeringWheelAngle(0);
                     stageMoving++;
                 }
@@ -92,13 +93,25 @@ namespace automotive {
                     vc.setSteeringWheelAngle(0);
                     stageMoving++;
                 }
-                if ((stageMoving >= 25) && (stageMoving < 80)) {
+                if ((stageMoving >= 25) && (stageMoving < 40)) {
                     // Backwards, steering wheel to the right.
-                    vc.setSpeed(-2);
-                    vc.setSteeringWheelAngle(25);
+                    vc.setSpeed(0);
+                    vc.setSteeringWheelAngle(90);
                     stageMoving++;
                 }
-                if (stageMoving >= 80) {
+                if ((stageMoving >= 40) && (stageMoving < 80)) {
+                    // Backwards, steering wheel to the right.
+                    vc.setSpeed(-2);
+                    vc.setSteeringWheelAngle(90);
+                    stageMoving++;
+                }
+                if ((stageMoving >= 80) && (stageMoving < 108)) {
+                    // Backwards, steering wheel to the right.
+                    vc.setSpeed(-2);
+                    vc.setSteeringWheelAngle(-90);
+                    stageMoving++;
+                }
+                if (stageMoving >= 108) {
                     // Stop.
                     vc.setSpeed(0);
                     vc.setSteeringWheelAngle(0);
@@ -132,6 +145,7 @@ namespace automotive {
                     break;
                     case 2:
                         {
+			    cerr << "stageMoving = " << stageMoving << endl;
                             // Checking for distance sequence -, +.
                             if ((distanceOld < 0) && (sbd.getValueForKey_MapOfDistances(2) > 0)) {
                                 // Found distance sequence -, +.
@@ -139,7 +153,7 @@ namespace automotive {
                                 absPathEnd = vd.getAbsTraveledPath();
 
                                 const double GAP_SIZE = (absPathEnd - absPathStart);
-                                cerr << "Size = " << GAP_SIZE << endl;
+                                cerr << "Size !!!! = " << GAP_SIZE << " | Turn " << vc.getSteeringWheelAngle() << endl;
                                 m_foundGaps.push_back(GAP_SIZE);
 
                                 if ((stageMoving < 1) && (GAP_SIZE > 3.5)) {
