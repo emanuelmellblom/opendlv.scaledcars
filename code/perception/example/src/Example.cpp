@@ -166,7 +166,7 @@ Example::~Example() {}
                 cv::Mat image = cv::cvarrToMat(m_image, true, true, 0);
 
                 //Rezise image size(width<cols>, height<rows>)
-                cv::Size size(640,400);
+                cv::Size size(640,300);
                 resize(image,image,size);
 
                 //Convert original image to black/white
