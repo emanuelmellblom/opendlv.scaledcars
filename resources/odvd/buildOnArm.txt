@@ -1,0 +1,37 @@
+To run docker on a raspberry PI follow the following steps:
+
+Tools
+1. flash a sd card with raspbian (debian Jessie)
+2. Start the PI with the sd card.
+3. run terminal command, $ sudo apt-get update
+4. run terminal command, $ sudo apt-get upgrade
+5. run terminal command, $ sudo apt-get dist-upgrade
+6. Install docker with the following command: $ curl -sSL https://get.docker.com | sh
+7. Install xterm with the following command: $ sudo apt-get install xterm
+8. verify that the docker installation works by running: $ sudo docker pull armhf/hello-world
+9. install cmake by command: $ sudo apt-get install cmake
+
+Opendavinci
+1. clone the fork opendlv.scaledcars with address: https://github.com/emanuelmellblom/opendlv.scaledcars.git
+2. pull opendavinci docker image for arm with command: $ docker pull seresearch/opendlv-on-opendlv-core-on-opendavinci-ubuntu-16.04-armhf-complete
+3. cd to opendlev.scaledcars/docker
+4. make the following changes to the make file
+	1. line 23 -> IMAGE=opendlv-on-opendlv-core-on-opendavinci-ubuntu-16.04-armhf-complete
+	3. line 25 -> BASE_IMAGE_VERSION -> comment out this line (not needed)
+	4. line 115 -> change to: $(DOCKER) pull $(BASE_IMAGE)
+	5. line 118 -> change to: $(DOCKER) pull $(BASE_IMAGE)
+	6. line 128 -> change to: 	
+	$(DOCKER) run -ti --rm -v $(SOURCE_TREE_PATH):/opt/$(PROJECT_NAME).sources -v $(BUILD_PATH)/$(PROJECT_NAME).build:/opt/$(PROJECT_NAME).build -v $(CCACHE_PATH):/opt/ccache -v $(BUILD_PATH)/opt/$(DEST_DIR):/opt/$(DEST_DIR) -v $(SOURCE_TREE_PATH)/docker/completeBuild.sh:/opt/completeBuild.sh -w /opt $(BASE_IMAGE) /opt/completeBuild.sh $(RUN_BUILD_AS) $(RUN_BUILD_UID_AS) $(PACKAGING_ENABLED)
+	7. line 166 -> change to: cat $(SOURCE_TREE_PATH)/docker/Dockerfile.template | sed -e $(DOCKERFILE_BASEIMAGE) > $(BUILD_PATH)/Dockerfile
+5. Run command: $sudo make updateDockerBaseImage
+6. Run command: $sudo make buildComplete
+7. Run command: $sudo make createDockerImage
+
+Run the components with bash script
+1. change components that uses: "seresearch/opendavinci-ubuntu-16.04-complete:latest" to seresearch/opendlv-on-opendlv-core-on-opendavinci-ubuntu-16.04-armhf-complete
+2. change the path to home so that it is: /home/pi/DIT-168:/opt/configuration
+3. in own components that uses: "seresearch/scaledcars-on-opendlv-on-opendlv-core-on-opendavinci-on-base-dev" change to 
+   seresearch/scaledcars-on-opendlv-on-opendlv-core-on-opendavinci-ubuntu-16.04-armhf-complete-dev
+
+Now everything should work :)   
+
