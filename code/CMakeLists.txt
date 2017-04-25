@@ -50,7 +50,7 @@ set(LIBRARIES ${OPENDAVINCI_LIBRARIES})
 add_subdirectory(perception)
 add_subdirectory(control)
 add_subdirectory(driver)
-#add_subdirectory(lanefollowing)
+add_subdirectory(lanefollower)
 
 ###########################################################################
 # Enable CPack to create .deb and .rpm.

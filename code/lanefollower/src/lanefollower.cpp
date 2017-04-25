@@ -1,6 +1,7 @@
 /**
- * Example - Example code.
- * Copyright (C) 2016 Christian Berger
+ * LaneFollower
+ * - Emanuel Mellblom
+ * - John Sundling
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -45,13 +46,14 @@
 
 #include "odvdscaledcarsdatamodel/generated/chalmersrevere/scaledcars/ExampleMessage.h"
 
-#include "Example.h"
+#include "lanefollower.h"
 
 #define SERIAL_PORT "/dev/ttyACM0"
 #define BAUD_RATE 9600
 
 namespace scaledcars {
-namespace perception {
+//namespace perception {
+//namespace lanefollower {
 
 using namespace std;
 using namespace odcore::base;
@@ -72,7 +74,7 @@ double steering;
 
 
 
-Example::Example(const int &argc, char **argv): TimeTriggeredConferenceClientModule(argc, argv, "scaledcars-perception-example"),
+lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenceClientModule(argc, argv, "scaledcars-lanefollower"),
     m_hasAttachedToSharedImageMemory(false),
     m_sharedImageMemory(),
     m_image(NULL),
@@ -84,15 +86,15 @@ Example::Example(const int &argc, char **argv): TimeTriggeredConferenceClientMod
     m_eOld(0),
     m_vehicleControl() {}
 
-Example::~Example() {}
+        lanefollower::~lanefollower() {}
 
-    void Example::setUp() {
+    void lanefollower::setUp() {
         //cvNamedWindow("Camera Feed Image", CV_WINDOW_AUTOSIZE);
         //cvMoveWindow("Camera Feed Image", 300, 100);
         //Set SIMULATOR to true if simulator is used and false otherwise.
     }
 
-    void Example::tearDown() {
+    void lanefollower::tearDown() {
         if (m_image != NULL) {
             cvReleaseImage(&m_image);
         }
@@ -100,7 +102,7 @@ Example::~Example() {}
     }
     
     
-    bool Example::readSharedImage(Container &c) {
+    bool lanefollower::readSharedImage(Container &c) {
             bool retVal = false;
             //cerr << "trying to read" << endl;
              if (c.getDataType() == odcore::data::image::SharedImage::ID()) {
@@ -144,7 +146,7 @@ Example::~Example() {}
             return retVal;
         }
 
-    void Example::processImage() {
+    void lanefollower::processImage() {
 
             static bool useRightLaneMarking = true;
             double e = 0;
@@ -166,7 +168,7 @@ Example::~Example() {}
                 cv::Mat image = cv::cvarrToMat(m_image, true, true, 0);
 
                 //Rezise image size(width<cols>, height<rows>)
-                cv::Size size(640,300);
+                cv::Size size(640,400);
                 resize(image,image,size);
 
                 //Convert original image to black/white
@@ -224,14 +226,22 @@ Example::~Example() {}
             IplImage* temp = &pretemp;
 
             //TEST VOTING
+            //Right Lane
             int rightLaneCount = 0;
             int missingRightLane = 0;
-            int lastRightDistance = 0;
-            cerr << lastRightDistance << endl;
+            //int lastRightDistance = 0;
+
+            //Left Lane
+            int leftLaneCount = 0;
+            int missingLeftLane = 0;
+            //int lastLeftDistance = 0;
+
+            //cerr << lastRightDistance << endl;
 
 
             //Lane detecting algorithm
             list<CvPoint> unsorted;
+            list<CvPoint> unsortedLeft;
             list<list<CvPoint>>sorted;
             sorted.push_front(unsorted);
 
@@ -242,7 +252,7 @@ Example::~Example() {}
                 left.x = -1;
 
                 // Search from middle to the left:
-                for(int x = temp->width/2; x > 0; x--) {
+                for (int x = temp->width / 2; x > 0; x--) {
                     pixelLeft = cvGet2D(temp, y, x);
                     if (pixelLeft.val[0] >= 200) {
                         left.x = x;
@@ -255,7 +265,7 @@ Example::~Example() {}
                 CvPoint right;
                 right.y = y;
                 right.x = -1;
-                for(int x = temp->width/2; x < temp->width; x++) {
+                for (int x = temp->width / 2; x < temp->width; x++) {
                     pixelRight = cvGet2D(temp, y, x);
                     if (pixelRight.val[0] >= 200) {
                         right.x = x;
@@ -264,17 +274,27 @@ Example::~Example() {}
                 }
 
                 //TEST VOTING Find correct poits detected ---------------------------------------
-                if(right.x > 0){
+                //Right Lane
+                if (right.x > 0) {
                     //cerr << "In the storing if--------------------" << endl;
                     rightLaneCount++;
-                    lastRightDistance = right.x;
+                    //lastRightDistance = right.x;
                     //int point[2] = {right.x, y};
                     //CvPoint* point;
                     //point->x = right.x;
                     //point->y = y;
                     unsorted.push_front(right);
-                }else{
+                } else {
                     missingRightLane++;
+                }
+
+                //Left Lane
+                if (left.x > 0) {
+                    leftLaneCount++;
+                    //lastLeftDistance = left.x;
+                    unsortedLeft.push_front(left);
+                } else {
+                    missingLeftLane++;
                 }
                 //-------------------------------------------------------------------------------
 
@@ -284,11 +304,11 @@ Example::~Example() {}
                         //cvLine(temp, cvPoint(temp->width/2, y), left, green, 1, 8);
 
                         stringstream sstr;
-                        sstr << (temp->width/2 - left.x);
+                        sstr << (temp->width / 2 - left.x);
                         //cvPutText(temp, sstr.str().c_str(), cvPoint(temp->width/2 - 100, y - 2), &m_font, green);
                         //imgProc.line(temp,(temp->width/2 - 100), y-2, new cv::Scalar(0,255,0),3);
-                        
-                        cv::line(grey_image, cv::Point2i(temp->width/2, y), left, cv::Scalar(255,0,0),1,8);
+
+                        cv::line(grey_image, cv::Point2i(temp->width / 2, y), left, cv::Scalar(255, 0, 0), 1, 8);
 
 
                     }
@@ -298,14 +318,13 @@ Example::~Example() {}
                         //cvLine(temp, cvPoint(temp->width/2, y), right, red, 1, 8);
 
                         stringstream sstr;
-                        sstr << (right.x - temp->width/2);
+                        sstr << (right.x - temp->width / 2);
                         //cvPutText(temp, sstr.str().c_str(), cvPoint(temp->width/2 + 100, y - 2), &m_font, red);
 
-                        cv::line(grey_image, cv::Point2i(temp->width/2, y), right, cv::Scalar(255,0,0),1,8);
+                        cv::line(grey_image, cv::Point2i(temp->width / 2, y), right, cv::Scalar(255, 0, 0), 1, 8);
                     }
                 }
 
-             
 
                 if (y == CONTROL_SCANLINE) {
                     // Calculate the deviation error.
@@ -315,102 +334,175 @@ Example::~Example() {}
                             m_eOld = 0;
                         }
 
-                        e = ((right.x - temp->width/2.0) - distance)/distance;
+                        e = ((right.x - temp->width / 2.0) - distance) / distance;
 
                         useRightLaneMarking = true;
-                    }
-                    else if (left.x > 0) {
-                        if (useRightLaneMarking){
+                    } else if (left.x > 0) {
+                        if (useRightLaneMarking) {
                             m_eSum = 0;
                             m_eOld = 0;
                         }
-                        
-                        e = (distance - (temp->width/2.0 - left.x))/distance;
+
+                        e = (distance - (temp->width / 2.0 - left.x)) / distance;
 
 
                         useRightLaneMarking = false;
-                    }
-                    else {
+                    } else {
                         // If no measurements are available, reset PID controller.
                         m_eSum = 0;
                         m_eOld = 0;
                     }
                     //TEST VOTING
-                    if(rightLaneCount>=missingRightLane){
+                    if (rightLaneCount >= missingRightLane) {
                         //cerr << "in the first if!!!!!" << endl;
                         CvPoint h = unsorted.front();
 
-                        if(unsorted.size()!=0) unsorted.pop_front();
+                        if (unsorted.size() != 0) unsorted.pop_front();
                         CvPoint t = unsorted.front();
 
-                        if(unsorted.size()!=0) unsorted.pop_front();
-      
-                        list<CvPoint>* listPointer=&sorted.front();
+                        if (unsorted.size() != 0) unsorted.pop_front();
 
-                        while(unsorted.size()!=0){
+                        list <CvPoint> *listPointer = &sorted.front();
+
+                        while (unsorted.size() != 0) {
                             //cerr << "First = " << (h.x+t.x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x << endl;
                             //CvScalar pix = cvGet2D(temp, (h[0]+t[0])/2, (h[1]+t[1])/2);
-                            CvScalar pix = cvGet2D(temp, (h.y+t.y)/2, (h.x+t.x)/2);
+                            CvScalar pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
                             //cerr << "beforeif" << endl;
-                            if(pix.val[0] >= 200){
+                            if (pix.val[0] >= 200) {
                                 cerr << "########Finds a white pixel in first if########" << endl;
                                 //cerr << "in if" << endl;
                                 listPointer->push_back(t);
-                            }else{
+                            } else {
                                 cerr << "##does not see a white##" << endl;
                                 //cerr << "in else" << endl;
                                 //listPointer->push_back(t);
                                 unsigned int i;
-                                for (i = 0; i < sorted.size(); i++){
+                                for (i = 0; i < sorted.size(); i++) {
                                     //cerr << "First2 = " << (h->x+t->x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x;
-                                    pix = cvGet2D(temp, (h.y+t.y)/2, (h.x+t.x)/2);
-                                    if(pix.val[0] >= 200){
+                                    pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
+                                    if (pix.val[0] >= 200) {
                                         cerr << "########Finds a white pixel in for loop ########" << endl;
 
                                         listPointer->push_back(t);
                                         break;
-                                    }else{
+                                    } else {
                                         //list<int*> tempList = sorted.front();
-                                        list<CvPoint> tempList = sorted.front();
+                                        list <CvPoint> tempList = sorted.front();
                                         sorted.pop_front();
-                                        listPointer=&sorted.front();
+                                        listPointer = &sorted.front();
                                         sorted.push_back(tempList);
                                     }
                                 }
-                                if(i == sorted.size()){
-                                    list<CvPoint> tempList2;
+                                if (i == sorted.size()) {
+                                    list <CvPoint> tempList2;
                                     tempList2.push_back(t);
                                     sorted.push_back(tempList2);
                                     listPointer = &sorted.back();
                                 }
                             }
-                            h=t;
-                            t=unsorted.front();
-                            if(unsorted.size() != 0)unsorted.pop_front();
-                        //else t = 0;
+                            h = t;
+                            t = unsorted.front();
+                            if (unsorted.size() != 0)unsorted.pop_front();
+                            //else t = 0;
                         }
                         //cerr << "out of first while" << endl;
                         //list<int*> l = sorted.front();
-                        list<CvPoint> l = sorted.front();
+                        list <CvPoint> l = sorted.front();
                         //cerr << "in between " << endl;
-                        sorted.pop_front();                    
-                        while(sorted.size()!=0){
+                        sorted.pop_front();
+                        while (sorted.size() != 0) {
                             //cerr << "in second while" << endl;
-                            if(sorted.front().size() > l.size()){
+                            if (sorted.front().size() > l.size()) {
                                 l = sorted.front();
                             }
                             sorted.pop_front();
                         }
                         //cerr << "out of second while" << endl;
-                        
-                        e = ((l.front().x - temp->width/2.0) - distance)/distance;
 
+                        e = ((l.front().x - temp->width / 2.0) - distance) / distance;
+                        // else{
+                        //     e = (distance - (temp->width/2.0 - left.x))/distance;
+                        // }
 
-                    }// else{
-                    //     e = (distance - (temp->width/2.0 - left.x))/distance;
-                    // }
+                        /*
+                         * LEFT LANE
+                         */
+                    } else if (leftLaneCount >= missingLeftLane) {
+                        //cerr << "in the first if!!!!!" << endl;
+                        CvPoint h = unsortedLeft.front();
+
+                        if (unsortedLeft.size() != 0) unsortedLeft.pop_front();
+                        CvPoint t = unsortedLeft.front();
+
+                        if (unsortedLeft.size() != 0) unsortedLeft.pop_front();
+
+                        list <CvPoint> *listPointer = &sorted.front();
+
+                        while (unsortedLeft.size() != 0) {
+                            //cerr << "First = " << (h.x+t.x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x << endl;
+                            //CvScalar pix = cvGet2D(temp, (h[0]+t[0])/2, (h[1]+t[1])/2);
+                            CvScalar pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
+                            //cerr << "beforeif" << endl;
+                            if (pix.val[0] >= 200) {
+                                //cerr << "########Finds a white pixel in first if########" << endl;
+                                //cerr << "in if" << endl;
+                                listPointer->push_back(t);
+                            } else {
+                                //cerr << "##does not see a white##" << endl;
+                                //cerr << "in else" << endl;
+                                //listPointer->push_back(t);
+                                unsigned int i;
+                                for (i = 0; i < sorted.size(); i++) {
+                                    //cerr << "First2 = " << (h->x+t->x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x;
+                                    pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
+                                    if (pix.val[0] >= 200) {
+                                        //cerr << "########Finds a white pixel in for loop ########" << endl;
+
+                                        listPointer->push_back(t);
+                                        break;
+                                    } else {
+                                        //list<int*> tempList = sorted.front();
+                                        list <CvPoint> tempList = sorted.front();
+                                        sorted.pop_front();
+                                        listPointer = &sorted.front();
+                                        sorted.push_back(tempList);
+                                    }
+                                }
+                                if (i == sorted.size()) {
+                                    list <CvPoint> tempList2;
+                                    tempList2.push_back(t);
+                                    sorted.push_back(tempList2);
+                                    listPointer = &sorted.back();
+                                }
+                            }
+                            h = t;
+                            t = unsortedLeft.front();
+                            if (unsortedLeft.size() != 0)unsortedLeft.pop_front();
+                            //else t = 0;
+                        }
+                        //cerr << "out of first while" << endl;
+                        //list<int*> l = sorted.front();
+                        list <CvPoint> l = sorted.front();
+                        //cerr << "in between " << endl;
+                        sorted.pop_front();
+                        while (sorted.size() != 0) {
+                            //cerr << "in second while" << endl;
+                            if (sorted.front().size() > l.size()) {
+                                l = sorted.front();
+                            }
+                            sorted.pop_front();
+                        }
+                        //cerr << "out of second while" << endl;
+
+                        //e = ((l.front().x - temp->width/2.0) - distance)/distance;
+                        e = (distance - (temp->width / 2.0 - l.front().x)) / distance;
+                        // else{
+                        //     e = (distance - (temp->width/2.0 - left.x))/distance;
+                        // }
+                    }
+
                 }
-
             }
 
 
@@ -482,7 +574,7 @@ Example::~Example() {}
         // This method will do the main data processing job.
         // Therefore, it tries to open the real camera first. If that fails, the virtual camera images from camgen are used.
         
-        odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode Example::body() {
+        odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode lanefollower::body() {
             // Get configuration data.
             KeyValueConfiguration kv = getKeyValueConfiguration();
 
@@ -672,4 +764,4 @@ Example::~Example() {}
 
 
 }
-} // scaledcars::perception
+//} // scaledcars::perception

@@ -17,8 +17,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef PERCEPTION_EXAMPLE_H
-#define PERCEPTION_EXAMPLE_H
+//#ifndef PERCEPTION_EXAMPLE_H
+//#define PERCEPTION_EXAMPLE_H
+
+#ifndef LANEFOLLOWER_H
+#define LANEFOLLOWER_H
 
 #include <memory>
 
@@ -34,17 +37,17 @@
 #include "opendavinci/GeneratedHeaders_OpenDaVINCI.h"
 
 namespace scaledcars {
-namespace perception {
+//namespace perception {
 
 using namespace std;
 
 /**
  * Time-triggered example.
  */
-class Example : public odcore::base::module::TimeTriggeredConferenceClientModule {
+class lanefollower : public odcore::base::module::TimeTriggeredConferenceClientModule {
    private:
-    Example(const Example & /*obj*/) = delete;
-    Example &operator=(const Example & /*obj*/) = delete;
+    lanefollower(const lanefollower & /*obj*/) = delete;
+    lanefollower &operator=(const lanefollower & /*obj*/) = delete;
 
    public:
     /**
@@ -53,9 +56,9 @@ class Example : public odcore::base::module::TimeTriggeredConferenceClientModule
      * @param argc Number of command line arguments.
      * @param argv Command line arguments.
      */
-    Example(const int &argc, char **argv);
+    lanefollower(const int &argc, char **argv);
 
-    virtual ~Example();
+    virtual ~lanefollower();
 
 
   odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode body();
@@ -86,6 +89,6 @@ class Example : public odcore::base::module::TimeTriggeredConferenceClientModule
   
 };
 }
-} // scaledcars::perception
+//} // scaledcars::perception
 
 #endif /*PERCEPTION_EXAMPLE_H*/
