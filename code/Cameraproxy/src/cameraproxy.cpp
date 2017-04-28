@@ -32,7 +32,7 @@
     #include "uEyeCamera.h"
 #endif
 
-#include "Proxy.h"
+#include "cameraproxy.h"
 
 namespace automotive {
     namespace miniature {

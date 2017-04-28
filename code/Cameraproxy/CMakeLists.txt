@@ -18,7 +18,7 @@
 
 CMAKE_MINIMUM_REQUIRED (VERSION 2.8)
 
-PROJECT (proxy)
+PROJECT (cameraproxy)
 
 ###########################################################################
 # Set the search path for .cmake files.

@@ -23,7 +23,7 @@
 #include "cxxtest/TestSuite.h"
 
 // Include local header files.
-#include "../include/Proxy.h"
+#include "../include/cameraproxy.h"
 
 using namespace std;
 using namespace odcore::data;
