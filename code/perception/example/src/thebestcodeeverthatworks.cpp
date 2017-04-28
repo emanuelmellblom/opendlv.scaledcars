@@ -1,6 +1,6 @@
 /**
- * LaneFollower
- * @authors Emanuel Mellblom, John Sundling
+ * Example - Example code.
+ * Copyright (C) 2016 Christian Berger
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,7 +18,6 @@
  */
 
 #include <stdint.h>
-#include <list>
 
 #include <iostream>
  #include <cstring>
@@ -45,14 +44,13 @@
 
 #include "odvdscaledcarsdatamodel/generated/chalmersrevere/scaledcars/ExampleMessage.h"
 
-#include "lanefollower.h"
+#include "Example.h"
 
 #define SERIAL_PORT "/dev/ttyACM0"
 #define BAUD_RATE 9600
 
 namespace scaledcars {
-//namespace perception {
-//namespace lanefollower {
+namespace perception {
 
 using namespace std;
 using namespace odcore::base;
@@ -73,7 +71,7 @@ double steering;
 
 
 
-lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenceClientModule(argc, argv, "scaledcars-lanefollower"),
+Example::Example(const int &argc, char **argv): TimeTriggeredConferenceClientModule(argc, argv, "scaledcars-perception-example"),
     m_hasAttachedToSharedImageMemory(false),
     m_sharedImageMemory(),
     m_image(NULL),
@@ -85,15 +83,15 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
     m_eOld(0),
     m_vehicleControl() {}
 
-        lanefollower::~lanefollower() {}
+Example::~Example() {}
 
-    void lanefollower::setUp() {
+    void Example::setUp() {
         //cvNamedWindow("Camera Feed Image", CV_WINDOW_AUTOSIZE);
         //cvMoveWindow("Camera Feed Image", 300, 100);
         //Set SIMULATOR to true if simulator is used and false otherwise.
     }
 
-    void lanefollower::tearDown() {
+    void Example::tearDown() {
         if (m_image != NULL) {
             cvReleaseImage(&m_image);
         }
@@ -101,7 +99,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
     }
     
     
-    bool lanefollower::readSharedImage(Container &c) {
+    bool Example::readSharedImage(Container &c) {
             bool retVal = false;
             //cerr << "trying to read" << endl;
              if (c.getDataType() == odcore::data::image::SharedImage::ID()) {
@@ -124,7 +122,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                     Lock l(m_sharedImageMemory);
 
                     //const uint32_t numberOfChannels = 3;
-                    if(m_image == NULL) {
+                    if (m_image == NULL) {
                         m_image = cvCreateImage(cvSize(si.getWidth(), si.getHeight()), IPL_DEPTH_8U, si.getBytesPerPixel());
                     }
 
@@ -145,7 +143,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
             return retVal;
         }
 
-    void lanefollower::processImage() {
+    void Example::processImage() {
 
             static bool useRightLaneMarking = true;
             double e = 0;
@@ -181,40 +179,11 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                 //Apply Canny edge detection 
                 Canny(grey_image, grey_image, 50, 200, 3);
 
-                //cerr << "Image Converted" << endl;
+                //Show the processed image if m_debug == true
+                //if(!grey_image.empty() && m_debug){
 
-                //TEST Contours
-                // vector<vector<cv::Point>> contours;
-                // vector<Vec4i> hierarchy;
-                // cv::findContours(grey_image, grey_image, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE, cvPoint(0,0));
-                // //for (unsigned int i = 0; i < contours.size(); i++){
-                // for (unsigned int i = 0; i < sizeof(contours); i++){
-                //     if(hierarchy[i][3] >= 0){
-                //         cv::drawContours(grey_image, grey_image, i, cv::Scalar(2,55,0,0),1,8);
-                //     }
-                // }
-
-
-                // vector<vector<cv::Point> > contours;
-                // vector<cv::Vec4i> hierarchy;
-                // cv::RNG rng(12345);
-                // //Mat drawing = Mat::zeros( grey_image.size(), CV_8UC3 );
-                // //cv::findContours( grey_image, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
-             
-                // //cv::Mat drawing = cv::Mat::zeros( sizeof(grey_image), CV_8UC3 );
-                // cv::Mat m = grey_image.clone(); cv::findContours(m, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-                // for( unsigned int i = 0; i< sizeof(contours); i++ ){
-                //     cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-                //     cv::drawContours( m, contours, i, color, 2, 8, hierarchy, 0, cv::Point() );
-                // }
-                // //END TEST Contours
-
-                // //Show the processed image if m_debug == true
-                // if(!grey_image.empty() && m_debug){
-
-                //     cv::imshow("Processed image", m);
-                // }
+                    //cv::imshow("Processed image", grey_image);
+                //}
                 cvWaitKey(10);
             }
 
@@ -225,33 +194,29 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
             IplImage* temp = &pretemp;
 
             //TEST VOTING
-            //Right Lane
             int rightLaneCount = 0;
             int missingRightLane = 0;
-            //int lastRightDistance = 0;
+            int lastRightDistance = 0;
 
-            //Left Lane
-            int leftLaneCount = 0;
-            int missingLeftLane = 0;
-            //int lastLeftDistance = 0;
-
-            //cerr << lastRightDistance << endl;
-
+            // //TEST
+            // int prevLeftX = 0;
+            // int prevRightX = 0;
+            // int tmp = y;
+            // for(int i = 0; i < temp->width/2; i++){
+            //     if()
+            // }
+            // //END TEST
 
             //Lane detecting algorithm
-            list<CvPoint> unsorted;
-            list<CvPoint> unsortedLeft;
-            list<list<CvPoint>>sorted;
-            sorted.push_front(unsorted);
-
-            for(int32_t y = temp->height - 8; y > CONTROL_SCANLINE -10; y -= 5) { //-10
+            for(int32_t y = temp->height - 8; y > CONTROL_SCANLINE -10; y -= 10) {
+                //cerr << "searching ----- " << endl;
                 CvScalar pixelLeft;
                 CvPoint left; //Changed
                 left.y = y;
                 left.x = -1;
 
                 // Search from middle to the left:
-                for (int x = temp->width / 2; x > 0; x--) {
+                for(int x = temp->width/2; x > 0; x--) {
                     pixelLeft = cvGet2D(temp, y, x);
                     if (pixelLeft.val[0] >= 200) {
                         left.x = x;
@@ -264,7 +229,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                 CvPoint right;
                 right.y = y;
                 right.x = -1;
-                for (int x = temp->width / 2; x < temp->width; x++) {
+                for(int x = temp->width/2; x < temp->width; x++) {
                     pixelRight = cvGet2D(temp, y, x);
                     if (pixelRight.val[0] >= 200) {
                         right.x = x;
@@ -272,30 +237,13 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                     }
                 }
 
-                //TEST VOTING Find correct poits detected ---------------------------------------
-                //Right Lane
-                if (right.x > 0) {
-                    //cerr << "In the storing if--------------------" << endl;
+                //TEST VOTING
+                if(right.x > 0){
                     rightLaneCount++;
-                    //lastRightDistance = right.x;
-                    //int point[2] = {right.x, y};
-                    //CvPoint* point;
-                    //point->x = right.x;
-                    //point->y = y;
-                    unsorted.push_front(right);
-                } else {
+                    lastRightDistance = right.x;
+                }else{
                     missingRightLane++;
                 }
-
-                //Left Lane
-                if (left.x > 0) {
-                    leftLaneCount++;
-                    //lastLeftDistance = left.x;
-                    unsortedLeft.push_front(left);
-                } else {
-                    missingLeftLane++;
-                }
-                //-------------------------------------------------------------------------------
 
                 if (m_debug) {
                     if (left.x > 0) {
@@ -303,11 +251,11 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                         //cvLine(temp, cvPoint(temp->width/2, y), left, green, 1, 8);
 
                         stringstream sstr;
-                        sstr << (temp->width / 2 - left.x);
+                        sstr << (temp->width/2 - left.x);
                         //cvPutText(temp, sstr.str().c_str(), cvPoint(temp->width/2 - 100, y - 2), &m_font, green);
                         //imgProc.line(temp,(temp->width/2 - 100), y-2, new cv::Scalar(0,255,0),3);
-
-                        cv::line(grey_image, cv::Point2i(temp->width / 2, y), left, cv::Scalar(255, 0, 0), 1, 8);
+                        
+                        cv::line(grey_image, cv::Point2i(temp->width/2, y), left, cv::Scalar(255,0,0),1,8);
 
 
                     }
@@ -317,13 +265,14 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                         //cvLine(temp, cvPoint(temp->width/2, y), right, red, 1, 8);
 
                         stringstream sstr;
-                        sstr << (right.x - temp->width / 2);
+                        sstr << (right.x - temp->width/2);
                         //cvPutText(temp, sstr.str().c_str(), cvPoint(temp->width/2 + 100, y - 2), &m_font, red);
 
-                        cv::line(grey_image, cv::Point2i(temp->width / 2, y), right, cv::Scalar(255, 0, 0), 1, 8);
+                        cv::line(grey_image, cv::Point2i(temp->width/2, y), right, cv::Scalar(255,0,0),1,8);
                     }
                 }
 
+             
 
                 if (y == CONTROL_SCANLINE) {
                     // Calculate the deviation error.
@@ -333,176 +282,32 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                             m_eOld = 0;
                         }
 
-                        e = ((right.x - temp->width / 2.0) - distance) / distance;
+                        e = ((right.x - temp->width/2.0) - distance)/distance;
 
                         useRightLaneMarking = true;
-                    } else if (left.x > 0) {
+                    }
+                    else if (left.x > 0) {
                         if (useRightLaneMarking) {
                             m_eSum = 0;
                             m_eOld = 0;
                         }
-
-                        e = (distance - (temp->width / 2.0 - left.x)) / distance;
+                        
+                        e = (distance - (temp->width/2.0 - left.x))/distance;
 
 
                         useRightLaneMarking = false;
-                    } else {
+                    }
+                    else {
                         // If no measurements are available, reset PID controller.
                         m_eSum = 0;
                         m_eOld = 0;
                     }
-                    /*
-                     * Comparing Measurements
-                     */
-                    if (rightLaneCount >= missingRightLane) {
-                        CvPoint h = unsorted.front();
-
-                        if (unsorted.size() != 0) unsorted.pop_front();
-                        CvPoint t = unsorted.front();
-
-                        if (unsorted.size() != 0) unsorted.pop_front();
-
-                        list <CvPoint> *listPointer = &sorted.front();
-
-                        while (unsorted.size() != 0) {
-                            //cerr << "First = " << (h.x+t.x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x << endl;
-                            //CvScalar pix = cvGet2D(temp, (h[0]+t[0])/2, (h[1]+t[1])/2);
-                            CvScalar pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
-                            //cerr << "beforeif" << endl;
-                            if (pix.val[0] >= 200) {
-                                cerr << "########Finds a white pixel in first if########" << endl;
-                                //cerr << "in if" << endl;
-                                listPointer->push_back(t);
-                            } else {
-                                cerr << "##does not see a white##" << endl;
-                                //cerr << "in else" << endl;
-                                //listPointer->push_back(t);
-                                unsigned int i;
-                                for (i = 0; i < sorted.size(); i++) {
-                                    //cerr << "First2 = " << (h->x+t->x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x;
-                                    pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
-                                    if (pix.val[0] >= 200) {
-                                        cerr << "########Finds a white pixel in for loop ########" << endl;
-
-                                        listPointer->push_back(t);
-                                        break;
-                                    } else {
-                                        //list<int*> tempList = sorted.front();
-                                        list <CvPoint> tempList = sorted.front();
-                                        sorted.pop_front();
-                                        listPointer = &sorted.front();
-                                        sorted.push_back(tempList);
-                                    }
-                                }
-                                if (i == sorted.size()) {
-                                    list <CvPoint> tempList2;
-                                    tempList2.push_back(t);
-                                    sorted.push_back(tempList2);
-                                    listPointer = &sorted.back();
-                                }
-                            }
-                            h = t;
-                            t = unsorted.front();
-                            if (unsorted.size() != 0)unsorted.pop_front();
-                            //else t = 0;
-                        }
-                        //cerr << "out of first while" << endl;
-                        //list<int*> l = sorted.front();
-                        list <CvPoint> l = sorted.front();
-                        //cerr << "in between " << endl;
-                        sorted.pop_front();
-                        while (sorted.size() != 0) {
-                            //cerr << "in second while" << endl;
-                            if (sorted.front().size() > l.size()) {
-                                l = sorted.front();
-                            }
-                            sorted.pop_front();
-                        }
-                        //cerr << "out of second while" << endl;
-
-                        e = ((l.front().x - temp->width / 2.0) - distance) / distance;
-                        // else{
-                        //     e = (distance - (temp->width/2.0 - left.x))/distance;
-                        // }
-
-                        /*
-                         * LEFT LANE
-                         */
-                    } else if (leftLaneCount >= missingLeftLane) {
-                        //cerr << "in the first if!!!!!" << endl;
-                        CvPoint h = unsortedLeft.front();
-
-                        if (unsortedLeft.size() != 0) unsortedLeft.pop_front();
-                        CvPoint t = unsortedLeft.front();
-
-                        if (unsortedLeft.size() != 0) unsortedLeft.pop_front();
-
-                        list <CvPoint> *listPointer = &sorted.front();
-
-                        while (unsortedLeft.size() != 0) {
-                            //cerr << "First = " << (h.x+t.x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x << endl;
-                            //CvScalar pix = cvGet2D(temp, (h[0]+t[0])/2, (h[1]+t[1])/2);
-                            CvScalar pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
-                            //cerr << "beforeif" << endl;
-                            if (pix.val[0] >= 200) {
-                                //cerr << "########Finds a white pixel in first if########" << endl;
-                                //cerr << "in if" << endl;
-                                listPointer->push_back(t);
-                            } else {
-                                //cerr << "##does not see a white##" << endl;
-                                //cerr << "in else" << endl;
-                                //listPointer->push_back(t);
-                                unsigned int i;
-                                for (i = 0; i < sorted.size(); i++) {
-                                    //cerr << "First2 = " << (h->x+t->x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x;
-                                    pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
-                                    if (pix.val[0] >= 200) {
-                                        //cerr << "########Finds a white pixel in for loop ########" << endl;
-
-                                        listPointer->push_back(t);
-                                        break;
-                                    } else {
-                                        //list<int*> tempList = sorted.front();
-                                        list <CvPoint> tempList = sorted.front();
-                                        sorted.pop_front();
-                                        listPointer = &sorted.front();
-                                        sorted.push_back(tempList);
-                                    }
-                                }
-                                if (i == sorted.size()) {
-                                    list <CvPoint> tempList2;
-                                    tempList2.push_back(t);
-                                    sorted.push_back(tempList2);
-                                    listPointer = &sorted.back();
-                                }
-                            }
-                            h = t;
-                            t = unsortedLeft.front();
-                            if (unsortedLeft.size() != 0)unsortedLeft.pop_front();
-                            //else t = 0;
-                        }
-                        //cerr << "out of first while" << endl;
-                        //list<int*> l = sorted.front();
-                        list <CvPoint> l = sorted.front();
-                        //cerr << "in between " << endl;
-                        sorted.pop_front();
-                        while (sorted.size() != 0) {
-                            //cerr << "in second while" << endl;
-                            if (sorted.front().size() > l.size()) {
-                                l = sorted.front();
-                            }
-                            sorted.pop_front();
-                        }
-                        //cerr << "out of second while" << endl;
-
-                        //e = ((l.front().x - temp->width/2.0) - distance)/distance;
-                        e = (distance - (temp->width / 2.0 - l.front().x)) / distance;
-                        // else{
-                        //     e = (distance - (temp->width/2.0 - left.x))/distance;
-                        // }
+                    //TEST VOTING
+                    if(rightLaneCount>=missingRightLane){
+                        e = ((lastRightDistance - temp->width/2.0) - distance)/distance;
                     }
-
                 }
+
             }
 
 
@@ -541,7 +346,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
 
              //cerr << "e = " << e << endl;
             const double p = Kp * e;
-            const double i = Ki * timeStep * e;// * m_eSum; // * e
+            const double i = Ki * timeStep *e;// * m_eSum; // * e
             const double d = Kd * (e - m_eOld)/timeStep;
             m_eOld = e;
 
@@ -574,7 +379,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
         // This method will do the main data processing job.
         // Therefore, it tries to open the real camera first. If that fails, the virtual camera images from camgen are used.
         
-        odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode lanefollower::body() {
+        odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode Example::body() {
             // Get configuration data.
             KeyValueConfiguration kv = getKeyValueConfiguration();
 
@@ -588,14 +393,14 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
             cvInitFont(&m_font, CV_FONT_HERSHEY_DUPLEX, hscale, vscale, shear, thickness, lineType);
 
             // Overall state machines for moving and measuring.
-            //enum StateMachineMoving { FORWARD, TO_LEFT_LANE_LEFT_TURN, TO_LEFT_LANE_RIGHT_TURcd N, CONTINUE_ON_LEFT_LANE, TO_RIGHT_LANE_RIGHT_TURN, TO_RIGHT_LANE_LEFT_TURN };
+            enum StateMachineMoving { FORWARD, TO_LEFT_LANE_LEFT_TURN, TO_LEFT_LANE_RIGHT_TURN, CONTINUE_ON_LEFT_LANE, TO_RIGHT_LANE_RIGHT_TURN, TO_RIGHT_LANE_LEFT_TURN };
 
-            //StateMachineMoving stageMoving = FORWARD;
+            StateMachineMoving stageMoving = FORWARD;
             //StateMachineMeasuring stageMeasuring = FIND_OBJECT_INIT;
 
             // State counter for dynamically moving back to right lane.
-            //int32_t stageToRightLaneRightTurn = 0;
-            //int32_t stageToRightLaneLeftTurn = 0;
+            int32_t stageToRightLaneRightTurn = 0;
+            int32_t stageToRightLaneLeftTurn = 0;
 
             // Overall state machine handler.
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
@@ -621,12 +426,11 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
 
                 
                     // 1. Get most recent vehicle data:
-                    //Container containerVehicleData = getKeyValueDataStore().get(automotive::VehicleData::ID());
-                    //automotive::VehicleData vd = containerVehicleData.getData<automotive::VehicleData> ();
+                    Container containerVehicleData = getKeyValueDataStore().get(automotive::VehicleData::ID());
+                    automotive::VehicleData vd = containerVehicleData.getData<automotive::VehicleData> ();
 
                     //int steering = 0;
 
-                /*
                     // Moving state machine.
                     if (stageMoving == FORWARD) {
                         // Use m_vehicleControl data from image processing.
@@ -686,7 +490,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                             m_eOld = 0;
                         }
                     }
-                */
+
                    
                    //Send to serial port
 
@@ -706,9 +510,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
 
 
                     //char outputBytes = 0x00;
-                    char con = (((int)(one)/4)+15)& 31; //Constant = 45/25=1,8
-
-                    //Formula for setting speed = (7-3)/2
+                    char con = (((int)(one)/3)+15)& 31; //Constant = 45/25=1,8
                      //con = 1;
                      std::stringstream ss;
 
@@ -736,7 +538,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                         //serial->start();
 
                         serial->send(s);
-                        //odcore::base::Thread::usleepFor(100);
+                        odcore::base::Thread::usleepFor(1000);
 
                         //serial->stop();
                         //serial->setStringListener(NULL);
@@ -749,6 +551,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                  // }
             }catch(string &exception) {
                 cerr << "Serial port could not be created: " << exception << endl;
+                //serialOn = false;
             }
 
             //End sending to serial port
@@ -766,5 +569,4 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
 
 
 }
-
-//} // scaledcars::lanefollower
+} // scaledcars::perception

@@ -25,13 +25,35 @@ services:
         network_mode: "host"
         volumes:
         - .:/opt/scaledcars.data
-        command: "/opt/od4/bin/odsupercomponent --cid=211 --verbose=1 --configuration=/opt/scaledcars.data/configuration"
-        
-    # scaledcars-control-example
-    scaledcars-control-example:
-        build: .
-        network_mode: "host"
-        depends_on:
-            - odsupercomponent
-        command: "/opt/opendlv.scaledcars/bin/scaledcars-control-example --cid=211 --freq=10"
+        command: "/opt/od4/bin/odsupercomponent --cid=111 --verbose=1 --configuration=$HOME/DIT-168:/opt/configuration"
+
+#Camera Proxy
+services: 
+proxy:
+build: .
+network_mode: "host"
+depends_on: odsupercomponent
+environment: DISPLAY=$DISPLAY	
+volumes: /tmp/.X11-unix:/tmp/.X11-unix
+device: /dev/video0:/dev/video0
+group: add video
+command: "/opt/opendlv.scaledcars/bin/proxy --cid=111 --freq=20"
+
+
+#Lanefollower
+services: 
+	scaledcars-lanefollowing:
+	build: .
+	network_mode: "host"
+	depends_on: 
+		- odsupercomponent
+	device: 
+		- /dev/ttyACM0:/dev/ttyACM0
+	environment:
+		- DISPLAY=$DISPLAY
+	volumes: 
+		- /tmp/.X11-unix:/tmp/.X11-unix
+	command: "/opt/opendlv.scaledcars/bin/scaledcars-lanefollower --cid=111 --freq=10"
+
+
 

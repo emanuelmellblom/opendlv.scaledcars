@@ -51,6 +51,8 @@ add_subdirectory(perception)
 add_subdirectory(control)
 add_subdirectory(driver)
 add_subdirectory(lanefollower)
+#add_subdirectory(overtaker)
+add_subdirectory(Cameraproxy)
 
 ###########################################################################
 # Enable CPack to create .deb and .rpm.
