@@ -135,22 +135,22 @@ endef
 # This target uses a Docker container to build the $(PROJECT_NAME) source tree using the selected Docker image.
 $(BUILD_PATH)/$(PROJECT_NAME).build/build.incremental:
 	$(call compile)
-
+	sudo chown -R ost: ~/Desktop/opendv/
 buildComplete:
 	$(call compile)
-
+	sudo chown -R ost: ~/Desktop/opendv/
 updateBuildComplete: updateDockerBaseImage
 	$(call compile)
-
+	sudo chown -R ost: ~/Desktop/opendv/
 # Dependency to allow incremental builds.
 buildIncremental: $(BUILD_PATH)/$(PROJECT_NAME).build/build.incremental
 	$(DOCKER) run -ti --rm -v $(SOURCE_TREE_PATH):/opt/$(PROJECT_NAME).sources -v $(BUILD_PATH)/$(PROJECT_NAME).build:/opt/$(PROJECT_NAME).build -v $(CCACHE_PATH):/opt/ccache -v $(BUILD_PATH)/opt/$(DEST_DIR):/opt/$(DEST_DIR) -v $(SOURCE_TREE_PATH)/docker/incrementalBuild.sh:/opt/incrementalBuild.sh -w /opt $(BASE_IMAGE_DEV):$(BASE_IMAGE_DEV_VERSION) /opt/incrementalBuild.sh $(RUN_BUILD_AS) $(RUN_BUILD_UID_AS)
 	mkdir -p $(PACKAGES_DIR)/$(DOCKER_IMAGE_NAME) && for i in $$(find $(BUILD_PATH)/$(PROJECT_NAME).build -type f -name "*deb" | grep -v CPack); do cp $$i $(PACKAGES_DIR)/$(DOCKER_IMAGE_NAME); done
-
+	sudo chown -R ost: ~/Desktop/opendv/
 ###############################################################################
 # This target creates a new Docker image based on the selected Docker image using the freshly built binaries.
 createDockerImage: createDockerImageNonDev createDockerImageDev
-
+	sudo chown -R ost: ~/Desktop/opendv/
 createDockerImageNonDev:
 	cat $(SOURCE_TREE_PATH)/docker/Dockerfile.template | sed -e $(DOCKERFILE_BASEIMAGE) > $(BUILD_PATH)/Dockerfile
 	cat $(SOURCE_TREE_PATH)/docker/Dockerfile.template.nonDev | sed -e $(DOCKERFILE_BASEIMAGE) > $(BUILD_PATH)/Dockerfile && $(CMAKE) -E remove_directory $(BUILD_PATH)/opt.nonDev && $(CMAKE) -E copy_directory $(BUILD_PATH)/opt $(BUILD_PATH)/opt.nonDev && $(CMAKE) -E remove_directory $(BUILD_PATH)/opt.nonDev/${DEST_DIR}/man && $(CMAKE) -E remove_directory $(BUILD_PATH)/opt.nonDev/${DEST_DIR}/include
@@ -161,7 +161,7 @@ createDockerImageNonDev:
 	cd $(BUILD_PATH) && $(DOCKER) build -t seresearch/$(DOCKER_IMAGE_NAME_WITH_GIT_COMMITS_IN_CURRENT_BRANCH) . | tee $(BUILD_PATH)/$(PROJECT_NAME).build/build.log || exit 1
 	$(DOCKER) images | grep $$(tail -1 $(BUILD_PATH)/$(PROJECT_NAME).build/build.log | cut -f3 -d" ") | grep "latest" && exit 0 || $(DOCKER) tag $$(tail -1 $(BUILD_PATH)/$(PROJECT_NAME).build/build.log | cut -f3 -d" ") $(DOCKER_IMAGE_NAME_SHORT_NAME):latest
 	$(DOCKER) tag $(DOCKER_IMAGE_NAME_SHORT_NAME):latest $(DOCKER_IMAGE_NAME_SHORT_NAME):$(VERSION)
-
+	sudo chown -R ost: ~/Desktop/opendv/
 createDockerImageDev:
 	cat $(SOURCE_TREE_PATH)/docker/Dockerfile.template | sed -e $(DOCKERFILE_BASEIMAGEDEV) > $(BUILD_PATH)/Dockerfile
 	echo "${PROJECT_NAME}.build" > $(BUILD_PATH)/.dockerignore
@@ -171,7 +171,7 @@ createDockerImageDev:
 	cd $(BUILD_PATH) && $(DOCKER) build -t seresearch/$(DOCKER_IMAGE_NAME_DEV_WITH_GIT_COMMITS_IN_CURRENT_BRANCH) . | tee $(BUILD_PATH)/$(PROJECT_NAME).build/build.log || exit 1
 	$(DOCKER) images | grep $$(tail -1 $(BUILD_PATH)/$(PROJECT_NAME).build/build.log | cut -f3 -d" ") | grep "latest" && exit 0 || $(DOCKER) tag $$(tail -1 $(BUILD_PATH)/$(PROJECT_NAME).build/build.log | cut -f3 -d" ") $(DOCKER_IMAGE_NAME_DEV_SHORT_NAME):latest
 	$(DOCKER) tag $(DOCKER_IMAGE_NAME_DEV_SHORT_NAME):latest $(DOCKER_IMAGE_NAME_DEV_SHORT_NAME):$(VERSION)
-
+	sudo chown -R ost: ~/Desktop/opendv/
 ###############################################################################
 
 pushDockerImage: createDockerImage
@@ -179,4 +179,6 @@ pushDockerImage: createDockerImage
 	$(DOCKER) push $(DOCKER_IMAGE_NAME_SHORT_NAME):$(VERSION)
 	$(DOCKER) push $(DOCKER_IMAGE_NAME_DEV_SHORT_NAME):latest
 	$(DOCKER) push $(DOCKER_IMAGE_NAME_DEV_SHORT_NAME):$(VERSION)
+	sudo chown -R ost: ~/Desktop/opendv/
+
 

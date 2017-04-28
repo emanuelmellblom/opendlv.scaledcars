@@ -31,14 +31,15 @@ cd /opt/opendlv.scaledcars.build
 echo "[opendlv.scaledcars Docker builder] Incremental build."
 
 mkdir -p build.system && cd build.system
-PATH=/opt/od4/bin:$PATH cmake -D CXXTEST_INCLUDE_DIR=/opt/opendlv.scaledcars.sources/thirdparty/cxxtest -D OPENDAVINCI_DIR=/opt/od4 -D CMAKE_INSTALL_PREFIX=/opt/opendlv.scaledcars /opt/opendlv.scaledcars.sources/code
 
+PATH=/opt/od4/bin:$PATH cmake -D CXXTEST_INCLUDE_DIR=/opt/opendlv.scaledcars.sources/thirdparty/cxxtest -D OPENDAVINCI_DIR=/opt/od4 -D CMAKE_INSTALL_PREFIX=/opt/opendlv.scaledcars /opt/opendlv.scaledcars.sources/code
 make -j4 && make test && make install
 EOF
 
 chmod 755 /opt/opendlv.scaledcars.build/build.sh
 chown $UID_AS:$UID_AS /opt/opendlv.scaledcars.build/build.sh
 chown -R $UID_AS:$UID_AS /opt
-
+#cd /home/ost
 su -m `getent passwd $UID_AS|cut -f1 -d":"` -c /opt/opendlv.scaledcars.build/build.sh
-
+#echo "hello world"
+#su -m `getent passwd $$ost|cut -f1 -d":"`

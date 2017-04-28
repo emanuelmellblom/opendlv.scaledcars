@@ -34,10 +34,10 @@ cmake -E remove_directory .
 PATH=/opt/od4/bin:$PATH cmake -D OPENDAVINCI_DIR=/opt/od4 -D CMAKE_INSTALL_PREFIX=/opt/opendlv.scaledcars -D PACKAGING_ENABLED=$PACKAGING_ENABLED /opt/opendlv.scaledcars.sources
 make -j4
 EOF
-
 chmod 755 /opt/opendlv.scaledcars.build/build.sh
 chown $UID_AS:$UID_AS /opt/opendlv.scaledcars.build/build.sh
 chown -R $UID_AS:$UID_AS /opt
 
 su -m `getent passwd $UID_AS|cut -f1 -d":"` -c /opt/opendlv.scaledcars.build/build.sh
 
+#chmod 777 /home/ost/Desktop/opendv/docker
