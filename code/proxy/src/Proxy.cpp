@@ -94,50 +94,8 @@ namespace automotive {
 			}
 			
 			
-            // This method will be call automatically _before_ running body().
-            //const string SERIAL_PORT = "/dev/pts/19";
-			//const uint32_t BAUD_RATE = 9600;
-			/*cerr << "go go " << endl;
-            try {	
-				//serial->send("a30");
-				for(int i=0;i<1;i++){
-					std::shared_ptr<SerialPort> serial(SerialPortFactory::createSerialPort(SERIAL_PORT, BAUD_RATE));
-					const uint32_t ONE_SECOND = 1000 * 1000;
-					odcore::base::Thread::usleepFor( ONE_SECOND);
-					serial->send("a30\r\n");
-					
-				
-				}*/
-				/*SerialRead handler;
-				serial->setStringListener(&handler);
-				//serial->send("m 0");
-				serial->start();
-				//serial->send("m 0");
-				
-				for(int i=0;i<10;i++){
-					//serial->send("m 0");
-					const uint32_t ONE_SECOND = 1000 * 1000;
-				odcore::base::Thread::usleepFor( ONE_SECOND);
-				}
-				//const uint32_t ONE_SECOND = 1000 * 1000;
-				//odcore::base::Thread::usleepFor(10 * ONE_SECOND);
-
-				// Stop receiving bytes and unregister our handler.
-				serial->stop();
-				//serial->send("m 0");
-				serial->setStringListener(NULL);
-				//serial->send("m 0");
-				//serial->send("a 60");*/
-				
-			/*}catch(string &exception) {
-				cerr << "Serial port could not be created: " << exception << endl;
-			}*/
-            /*if (getFrequency() < 20) {
-                cerr << endl << endl << "Proxy: WARNING! Running proxy with a LOW frequency (consequence: data updates are too seldom and will influence your algorithms in a negative manner!) --> suggestions: --freq=20 or higher! Current frequency: " << getFrequency() << " Hz." << endl << endl << endl;
-            }*/
-
             // Get configuration data.
-            KeyValueConfiguration kv = getKeyValueConfiguration();
+         //   KeyValueConfiguration kv = getKeyValueConfiguration();
 
   
         }
@@ -173,7 +131,7 @@ namespace automotive {
 			serial->start();
 			
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
-				std::stringstream bufferStream;
+				/*std::stringstream bufferStream;
 					bufferStream<<(char)captureCounter;
 					std::string output=bufferStream.str();
 					serial->send(output);
@@ -181,7 +139,38 @@ namespace automotive {
 					captureCounter++;
 				}else{
 					captureCounter=0;
+				}*/
+				
+				
+				
+				/*
+				 * Do something with the serial data
+				 * */
+				string serialInput=handler.readstr();
+				char input;
+				if((serialInput.size()>0?(input=serialInput.at(0))!=13&&input!=10?input:0:0)!=0){ 
+					
+					cerr<<(int)(input)<<endl;
+					
+					odcore::base::Lock o(overtaking);  
+					char *p = static_cast<char*>(overtaking->getSharedMemory());
+					//s = string(p);
+					
+					p[0]=input;
+					p[1]='\0';
+					
 				}
+				
+				
+				/*odcore::base::Lock l(laneFollower);
+               char *p = static_cast<char*>(laneFollower->getSharedMemory());
+                string s = string(p);
+                p[0];*/
+              
+                
+               
+                //if(s==string((char*)255))cerr<<"hellow owlre\n";
+                //if(s==string((char*)1))cerr<<"hellow owlre\n";*/
    
             }
             

@@ -12,7 +12,7 @@
 		using namespace odcore::wrapper;*/
 
 		 
-		 SerialRead::SerialRead(){
+		 SerialRead::SerialRead():output(""){
 						//cerr << "go zo " << endl;
 		}
 		
@@ -24,7 +24,17 @@
 		void SerialRead::nextString(const string &s) {
 					//cerr << "go go ";
 					//*s="";
-					 cout << "Received " << s.length() << " bytes containing '" << s << "'" << endl;
+					output=s;
+					// cout << "Received " << s.length() << " bytes containing '" << s << "'" << endl;
 		}
 
-	
+
+
+		std::string SerialRead::readstr() {
+					//cerr << "go go ";
+					//*s="";
+					std::string temp=this->output;
+					this->output="";
+					return temp;
+		}
+

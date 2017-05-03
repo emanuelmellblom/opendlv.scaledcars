@@ -36,7 +36,7 @@ sleep 3
 
 #lane detector
 #Template repository data triggerd example with openCV
-xterm -hold -e "docker run -ti --rm --net=host --ipc=host -e DISPLAY=$DISPLAY --device=/dev/ttyACM0:/dev/ttyACM0 -v /tmp/.X11-unix:/tmp/.X11-unix seresearch/scaledcars-on-opendlv-on-opendlv-core-on-opendavinci-on-base-dev /opt/opendlv.scaledcars/bin/proxy --cid=111 --freq=20" &
+xterm -hold -e "docker run -ti --rm --net=host --ipc=host -e DISPLAY=$DISPLAY --device=/dev/ttyACM0:/dev/ttyACM0 -v /tmp/.X11-unix:/tmp/.X11-unix seresearch/scaledcars-on-opendlv-on-opendlv-core-on-opendavinci-on-base-dev /opt/opendlv.scaledcars/bin/proxy --cid=111 --freq=40" &
 sleep 3
 
 #xterm -hold -e "docker run -ti --rm --net=host --ipc=host -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix seresearch/scaledcars-on-opendlv-on-opendlv-core-on-opendavinci-on-base-dev /opt/opendlv.scaledcars/bin/scaledcars-perception-example --cid=111 --freq=10" &
