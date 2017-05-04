@@ -61,6 +61,7 @@ namespace scaledcars{
 //NEW FROM LANEFOLLOWER
 using namespace odcore::data::image;
 double steering;
+int32_t distance = 90; //280
 //------
 
 
@@ -155,7 +156,7 @@ double steering;
             // }
 
             //const int32_t CONTROL_SCANLINE = 462; // calibrated length to right: 280px
-            const int32_t distance = 200; //280
+            //const int32_t distance = 150; //280
 
             cv::Mat grey_image;
             if(m_image!=NULL){
@@ -579,7 +580,7 @@ double steering;
         // This method will do the main data processing job.
         odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode Overtaker::body() {
              const int32_t ULTRASONIC_FRONT_CENTER = 3;
-             const int32_t ULTRASONIC_FRONT_RIGHT = 4;
+             //const int32_t ULTRASONIC_FRONT_RIGHT = 4;
              const int32_t INFRARED_FRONT_RIGHT = 0;
              const int32_t INFRARED_REAR_RIGHT = 2;
              //const int32_t ULTRASONIC_REAR_RIGHT = 5;
@@ -648,11 +649,11 @@ double steering;
                 /*
                 * TESTING STUFF
                 */
-                if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 6 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+                if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.1 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
                     //goForward = false;
                     cerr << "Object detected" << endl;
                     vc.setSpeed(1);
-                    vc.setSteeringWheelAngle(-50); //-45
+                    vc.setSteeringWheelAngle(-60); //-45
 
                     turnToLeftLane = true;
                     //driveOnLeftLane = true;
@@ -668,7 +669,7 @@ double steering;
 
 
                     vc.setSpeed(1);
-                    vc.setSteeringWheelAngle(-25);
+                    vc.setSteeringWheelAngle(-60);
                     Container cont(vc);
                     // Send container.
                     getConference().send(cont);
@@ -679,11 +680,11 @@ double steering;
                     // Send container.
                     getConference().send(cont1);
 
-                    double di = sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_RIGHT);
-                    cerr << "Ul front = " << di << endl;
+                    double di = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
+                    cerr << "IR front right = " << di << endl;
                     
                     //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_RIGHT) < 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT)>1){
-                    if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0){
+                    if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 2.60){
 
                         driveOnLeftLane = true;
                         turnToLeftLane = false;
@@ -694,6 +695,7 @@ double steering;
 
                 if(driveOnLeftLane){
                    
+                    distance = 280;
                     cerr << "driving on the left lane" << endl;
                     while((sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 || sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
                     //while(((sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) < 0) || (sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0)) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
@@ -742,6 +744,8 @@ double steering;
 
                 else if(turnToRightLane){
                     
+                    distance = 90;
+
                     cerr << "Turn back to right lane" << endl;
                     double inf3 = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
                     cerr << "Infrared rear right = " <<  inf3 << endl;
@@ -758,11 +762,11 @@ double steering;
                             double inf2 = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
                             cerr << "Infrared front right = " <<  inf2 << endl;
                             vc.setSpeed(1);
-                            vc.setSteeringWheelAngle(50);
+                            vc.setSteeringWheelAngle(45);
                             Container cont(vc);
                             // Send container.
                             getConference().send(cont);
-                            odcore::base::Thread::usleepFor(250000);
+                            odcore::base::Thread::usleepFor(200000);
                             vc.setSpeed(1);
                             vc.setSteeringWheelAngle(0);
                             Container cont1(vc);
@@ -770,6 +774,12 @@ double steering;
                             getConference().send(cont1);
 
                         }else{
+                            vc.setSpeed(1);
+                            vc.setSteeringWheelAngle(-45);
+                            Container cont2(vc);
+                            // Send container.
+                            getConference().send(cont2);
+                            odcore::base::Thread::usleepFor(90000);
                             turnToRightLane = false;
                             //goForward = true;
                             onRightLaneTurnLeft = true;
