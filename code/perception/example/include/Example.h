@@ -67,7 +67,6 @@ class Example : public odcore::base::module::TimeTriggeredConferenceClientModule
 
    private:
     void processImage();
-    bool SIMULATOR;
 
    private:
   
@@ -76,6 +75,7 @@ class Example : public odcore::base::module::TimeTriggeredConferenceClientModule
       IplImage *m_image;
       //cv::Mat m_image;
       bool m_debug;
+      bool m_simulator;
     CvFont m_font;
     
      odcore::data::TimeStamp m_previousTime;
