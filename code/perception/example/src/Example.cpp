@@ -18,6 +18,7 @@
  */
 
 #include <stdint.h>
+#include <list>
 
 #include <iostream>
  #include <cstring>
@@ -67,7 +68,6 @@ using namespace odcore::wrapper;
 
 bool serialOn = false;
 std::shared_ptr<SerialPort> serial;
-//std::shared_ptr<SerialPort> serial(SerialPortFactory::createSerialPort(SERIAL_PORT, BAUD_RATE));
 double steering;
 
 
@@ -77,6 +77,7 @@ Example::Example(const int &argc, char **argv): TimeTriggeredConferenceClientMod
     m_sharedImageMemory(),
     m_image(NULL),
     m_debug(true), //Have true to show detected lane markings, debugging prints and debugging camera windows
+    m_simulator(false), //Set m_simulator to true if simulator is used and false otherwise.
     m_font(),
     m_previousTime(),
     m_eSum(0),
@@ -89,14 +90,6 @@ Example::~Example() {}
         //cvNamedWindow("Camera Feed Image", CV_WINDOW_AUTOSIZE);
         //cvMoveWindow("Camera Feed Image", 300, 100);
         //Set SIMULATOR to true if simulator is used and false otherwise.
-
-        //test
-
-
-        //end test
-
-        
-        SIMULATOR = false;
     }
 
     void Example::tearDown() {
@@ -115,37 +108,31 @@ Example::~Example() {}
 
                 // Check if we have already attached to the shared memory containing the image from the virtual camera.
                 if (!m_hasAttachedToSharedImageMemory) {
-                    //cerr << "is not attached" << endl;
-                    //cerr << "reads shared image id: '" << si.toString() << "'" << endl;
                     m_sharedImageMemory = odcore::wrapper::SharedMemoryFactory::attachToSharedMemory(si.getName());
-                    //cerr << "attaching to memory" << endl;
                     m_hasAttachedToSharedImageMemory = true;
                 }
 
                 //debug
                 if(!m_sharedImageMemory->isValid()){
-                    //cerr << "not valid" << endl;
+                    cerr << "SharedImageMemory not valid" << endl;
                 }
 
                 // Check if we could successfully attach to the shared memory.
                 if (m_sharedImageMemory->isValid()) {
-                    //cerr << "shared img is valid" << endl;
                     // Lock the memory region to gain exclusive access using a scoped lock.
                     Lock l(m_sharedImageMemory);
 
                     //const uint32_t numberOfChannels = 3;
-                    if (m_image == NULL) {
-                        //cerr << "img = null" << endl;
+                    if(m_image == NULL) {
                         m_image = cvCreateImage(cvSize(si.getWidth(), si.getHeight()), IPL_DEPTH_8U, si.getBytesPerPixel());
                     }
 
                     // Example: Simply copy the image into our process space.
                     if (m_image != NULL) {
-                        //cerr << "img not null" << endl;
                         memcpy(m_image->imageData, m_sharedImageMemory->getSharedMemory(), si.getWidth() * si.getHeight() * si.getBytesPerPixel());
                     }
 
-                    if(SIMULATOR){
+                    if(m_simulator){
                         cvFlip(m_image, 0, -1);
                     }
                 }
@@ -162,9 +149,9 @@ Example::~Example() {}
             static bool useRightLaneMarking = true;
             double e = 0;
 
-            int32_t CONTROL_SCANLINE = 372;// 462
+            int32_t CONTROL_SCANLINE = 262;// 462, (372), 252 
             
-            // if(SIMULATOR){
+            // if(m_simulator){
             //     CONTROL_SCANLINE = 462;
             // }else{
             //     CONTROL_SCANLINE = 222;
@@ -174,29 +161,59 @@ Example::~Example() {}
             const int32_t distance = 280; //280
 
             cv::Mat grey_image;
-            //Add gaussian blur + Canny edge detection
             if(m_image!=NULL){
                 cv::Mat blured;
                 cv::Mat image = cv::cvarrToMat(m_image, true, true, 0);
 
-                grey_image = cv::Mat(image.cols, image.cols, CV_8UC1);
+                //Rezise image size(width<cols>, height<rows>)
+                cv::Size size(640,300);
+                resize(image,image,size);
 
+                //Convert original image to black/white
+                grey_image = cv::Mat(image.cols, image.cols, CV_8UC1);
                 cvtColor(image, grey_image, cv::COLOR_BGR2GRAY);
 
-                //blur(grey_image, grey_image, cv::Size(3,3) );
-                
                 //original: blur(grey_image, blured, cv::Size(3,3) );
-
+                //Add blur to the image. Blur determined by the kernel size.
                 GaussianBlur( grey_image, grey_image, cv::Size( 5, 5 ),0,0);
 
+                //Apply Canny edge detection 
                 Canny(grey_image, grey_image, 50, 200, 3);
 
-                //cv::namedWindow("Canny image", CV_WINDOW_AUTOSIZE);
+                //cerr << "Image Converted" << endl;
 
-                //Show the processed image if SIMULATOR == true
-                if(!grey_image.empty() && m_debug){
-                    cv::imshow("image", grey_image);
-                }
+                //TEST Contours
+                // vector<vector<cv::Point>> contours;
+                // vector<Vec4i> hierarchy;
+                // cv::findContours(grey_image, grey_image, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE, cvPoint(0,0));
+                // //for (unsigned int i = 0; i < contours.size(); i++){
+                // for (unsigned int i = 0; i < sizeof(contours); i++){
+                //     if(hierarchy[i][3] >= 0){
+                //         cv::drawContours(grey_image, grey_image, i, cv::Scalar(2,55,0,0),1,8);
+                //     }
+                // }
+
+
+                // vector<vector<cv::Point> > contours;
+                // vector<cv::Vec4i> hierarchy;
+                // cv::RNG rng(12345);
+                // //Mat drawing = Mat::zeros( grey_image.size(), CV_8UC3 );
+                // //cv::findContours( grey_image, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
+             
+                // //cv::Mat drawing = cv::Mat::zeros( sizeof(grey_image), CV_8UC3 );
+                // cv::Mat m = grey_image.clone(); cv::findContours(m, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+                // for( unsigned int i = 0; i< sizeof(contours); i++ ){
+                //     cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+                //     cv::drawContours( m, contours, i, color, 2, 8, hierarchy, 0, cv::Point() );
+                // }
+                // //END TEST Contours
+
+                // //Show the processed image if m_debug == true
+                // if(!grey_image.empty() && m_debug){
+
+                //     cv::imshow("Processed image", m);
+                // }
                 cvWaitKey(10);
             }
 
@@ -206,15 +223,23 @@ Example::~Example() {}
             IplImage pretemp = grey_image;
             IplImage* temp = &pretemp;
 
+            //TEST VOTING
+            int rightLaneCount = 0;
+            int missingRightLane = 0;
+            int lastRightDistance = 0;
+            cerr << lastRightDistance << endl;
+
+
             //Lane detecting algorithm
-            for(int32_t y = temp->height - 8; y > temp->height*0.6; y -= 10) {
-                
+            list<CvPoint> unsorted;
+            list<list<CvPoint>>sorted;
+            sorted.push_front(unsorted);
+
+            for(int32_t y = temp->height - 8; y > CONTROL_SCANLINE -10; y -= 5) { //-10
                 CvScalar pixelLeft;
                 CvPoint left; //Changed
                 left.y = y;
                 left.x = -1;
-
-                cerr << "y = " << y  << endl; 
 
                 // Search from middle to the left:
                 for(int x = temp->width/2; x > 0; x--) {
@@ -238,8 +263,22 @@ Example::~Example() {}
                     }
                 }
 
+                //TEST VOTING Find correct poits detected ---------------------------------------
+                if(right.x > 0){
+                    //cerr << "In the storing if--------------------" << endl;
+                    rightLaneCount++;
+                    lastRightDistance = right.x;
+                    //int point[2] = {right.x, y};
+                    //CvPoint* point;
+                    //point->x = right.x;
+                    //point->y = y;
+                    unsorted.push_front(right);
+                }else{
+                    missingRightLane++;
+                }
+                //-------------------------------------------------------------------------------
+
                 if (m_debug) {
-                    //cerr << "debugging" << endl;
                     if (left.x > 0) {
                         //CvScalar green = CV_RGB(0, 255, 0);
                         //cvLine(temp, cvPoint(temp->width/2, y), left, green, 1, 8);
@@ -270,7 +309,6 @@ Example::~Example() {}
 
                 if (y == CONTROL_SCANLINE) {
                     // Calculate the deviation error.
-                    cerr << "y = scan" << endl;
                     if (right.x > 0) {
                         if (!useRightLaneMarking) {
                             m_eSum = 0;
@@ -282,7 +320,7 @@ Example::~Example() {}
                         useRightLaneMarking = true;
                     }
                     else if (left.x > 0) {
-                        if (useRightLaneMarking) {
+                        if (useRightLaneMarking){
                             m_eSum = 0;
                             m_eOld = 0;
                         }
@@ -297,7 +335,82 @@ Example::~Example() {}
                         m_eSum = 0;
                         m_eOld = 0;
                     }
+                    //TEST VOTING
+                    if(rightLaneCount>=missingRightLane){
+                        //cerr << "in the first if!!!!!" << endl;
+                        CvPoint h = unsorted.front();
+
+                        if(unsorted.size()!=0) unsorted.pop_front();
+                        CvPoint t = unsorted.front();
+
+                        if(unsorted.size()!=0) unsorted.pop_front();
+      
+                        list<CvPoint>* listPointer=&sorted.front();
+
+                        while(unsorted.size()!=0){
+                            //cerr << "First = " << (h.x+t.x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x << endl;
+                            //CvScalar pix = cvGet2D(temp, (h[0]+t[0])/2, (h[1]+t[1])/2);
+                            CvScalar pix = cvGet2D(temp, (h.y+t.y)/2, (h.x+t.x)/2);
+                            //cerr << "beforeif" << endl;
+                            if(pix.val[0] >= 200){
+                                cerr << "########Finds a white pixel in first if########" << endl;
+                                //cerr << "in if" << endl;
+                                listPointer->push_back(t);
+                            }else{
+                                cerr << "##does not see a white##" << endl;
+                                //cerr << "in else" << endl;
+                                //listPointer->push_back(t);
+                                unsigned int i;
+                                for (i = 0; i < sorted.size(); i++){
+                                    //cerr << "First2 = " << (h->x+t->x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x;
+                                    pix = cvGet2D(temp, (h.y+t.y)/2, (h.x+t.x)/2);
+                                    if(pix.val[0] >= 200){
+                                        cerr << "########Finds a white pixel in for loop ########" << endl;
+
+                                        listPointer->push_back(t);
+                                        break;
+                                    }else{
+                                        //list<int*> tempList = sorted.front();
+                                        list<CvPoint> tempList = sorted.front();
+                                        sorted.pop_front();
+                                        listPointer=&sorted.front();
+                                        sorted.push_back(tempList);
+                                    }
+                                }
+                                if(i == sorted.size()){
+                                    list<CvPoint> tempList2;
+                                    tempList2.push_back(t);
+                                    sorted.push_back(tempList2);
+                                    listPointer = &sorted.back();
+                                }
+                            }
+                            h=t;
+                            t=unsorted.front();
+                            if(unsorted.size() != 0)unsorted.pop_front();
+                        //else t = 0;
+                        }
+                        //cerr << "out of first while" << endl;
+                        //list<int*> l = sorted.front();
+                        list<CvPoint> l = sorted.front();
+                        //cerr << "in between " << endl;
+                        sorted.pop_front();                    
+                        while(sorted.size()!=0){
+                            //cerr << "in second while" << endl;
+                            if(sorted.front().size() > l.size()){
+                                l = sorted.front();
+                            }
+                            sorted.pop_front();
+                        }
+                        //cerr << "out of second while" << endl;
+                        
+                        e = ((l.front().x - temp->width/2.0) - distance)/distance;
+
+
+                    }// else{
+                    //     e = (distance - (temp->width/2.0 - left.x))/distance;
+                    // }
                 }
+
             }
 
 
@@ -310,7 +423,6 @@ Example::~Example() {}
             //If debug is on show the lane detection distance lines
             if (m_debug) {
                 if (temp != NULL) {
-                    //ShowImage("WindowShowImage", grey_image);
                     cv::imshow("image", grey_image);
                     cvWaitKey(10);
                 }
@@ -335,9 +447,9 @@ Example::~Example() {}
             const double Ki = 3.103197570937628;
             const double Kd = 0.030450210485408566;
 
-             cerr << "e = " << e << endl;
+             //cerr << "e = " << e << endl;
             const double p = Kp * e;
-            const double i = Ki * timeStep *e;// * m_eSum;
+            const double i = Ki * timeStep * e;// * m_eSum; // * e
             const double d = Kd * (e - m_eOld)/timeStep;
             m_eOld = e;
 
@@ -358,7 +470,7 @@ Example::~Example() {}
             }
 
             if(m_debug){
-            cerr << "PID: " << "e = " << e << ", eSum = " << m_eSum << ", desiredSteering = " << desiredSteering << ", y = " << y << endl;
+                cerr << "PID: " << "e = " << e << ", eSum = " << m_eSum << ", desiredSteering = " << desiredSteering << ", y = " << y << endl;
             }
 
             // Go forward. Main speed of the car.
@@ -374,10 +486,6 @@ Example::~Example() {}
             // Get configuration data.
             KeyValueConfiguration kv = getKeyValueConfiguration();
 
-            // if(!serialOn){
-            //     serial = std::shared_ptr<SerialPort> (SerialPortFactory::createSerialPort(SERIAL_PORT, BAUD_RATE));
-            //     serialOn = true;
-            // }
             // Initialize fonts.
             const double hscale = 0.4;
             const double vscale = 0.3;
@@ -490,13 +598,13 @@ Example::~Example() {}
                    //Send to serial port
 
 
-                    int one = ((steering*180)/M_PI)+90;
+                    int one = ((steering*180)/M_PI);
                     //int one = steering;
-                     std::stringstream ss;
-                    ss << "a"<<one<<"&";
-                    std::string s = ss.str();
+                    // std::stringstream ss;
+                    //ss << "a"<<one<<"&";
+                    //std::string s = ss.str();
                     //Print
-                    cerr << s << endl;
+                   // cerr << s << endl;
 
                     //int one = floor(steering*100);
                    
@@ -505,7 +613,12 @@ Example::~Example() {}
 
 
                     //char outputBytes = 0x00;
-                    //char con = (((int)(one * 1.8)/3)+15)& 31; //Constant = 45/25=1,8
+                    char con = (((int)(one)/4)+15)& 31; //Constant = 45/25=1,8
+                     //con = 1;
+                     std::stringstream ss;
+
+                    ss << con;
+                    std::string s = ss.str();
 
                     //cerr << "con = " <<((int)con-15)*3 << endl;
                     //cerr << "con2 = " << (int)con << endl;
@@ -523,15 +636,15 @@ Example::~Example() {}
             
                  for (int i = 0; i < 1; ++i) {
                         
-                        SerialRead handeler;
-                        serial->setStringListener(&handeler);
-                        serial->start();
+                        //SerialRead handeler;
+                        //serial->setStringListener(&handeler);
+                        //serial->start();
 
                         serial->send(s);
-                        odcore::base::Thread::usleepFor(100000);
+                        //odcore::base::Thread::usleepFor(100);
 
-                        serial->stop();
-                        serial->setStringListener(NULL);
+                        //serial->stop();
+                        //serial->setStringListener(NULL);
                     }
 
                  //  for(int i=0;i<10;i++){
@@ -541,6 +654,7 @@ Example::~Example() {}
                  // }
             }catch(string &exception) {
                 cerr << "Serial port could not be created: " << exception << endl;
+                //serialOn = false;
             }
 
             //End sending to serial port
