@@ -43,14 +43,18 @@
 #include <opendavinci/odcore/wrapper/SharedMemoryFactory.h>
 
 #include "odvdscaledcarsdatamodel/generated/chalmersrevere/scaledcars/ExampleMessage.h"
+
+#include "opendavinci/odcore/base/KeyValueConfiguration.h"
+#include "opendavinci/odcore/data/TimeStamp.h"
 //----
 
 namespace scaledcars{
 
-
     using namespace std;
     using namespace odcore::base;
     using namespace odcore::data;
+    using namespace odcore;
+    using namespace odcore::wrapper;
     using namespace automotive;
     using namespace automotive::miniature;
 
@@ -137,30 +141,30 @@ int32_t distance = 90; //280
             return retVal;
         }
 
-        int readSensorData(int sensorId){
+        int Overtaker::readSensorData(int sensorId){
             const string NAME = "sensorMemory";
             int returnValue;
 
-            // We are using OpenDaVINCI's std::shared_ptr to automatically
-            // release any acquired resources.
+            // We are using OpenDaVINCI's std::shared_ptr to automatically release any acquired resources.
             try {
                 std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
 
                 if (sharedMemory->isValid()) {
                     uint32_t counter = 10;
                     while (counter-- > 0) {
-                        //string s;
                         int id;
                         int value;
                         {
                         // Using a scoped lock to lock and automatically unlock a shared memory segment.
                         odcore::base::Lock l(sharedMemory);
                         char *p = static_cast<char*>(sharedMemory->getSharedMemory());
-                        //s = string(p);
+                        
+                        //Extract the sensor ID from the received byte
                         id = p[sensorId] >> 5 & 0x03;
+                        //Extract the sensor value from the received byte
                         value = p[sensorId] & 0xfe;
                         }
-                        if(value == sensorId){
+                        if(id == sensorId){
                             returnValue = value;
                             break;
                         }
@@ -177,25 +181,26 @@ int32_t distance = 90; //280
             return returnValue;
         }
 
-        void sendSteeringAngle(int steeringAngle){
+        void Overtaker::sendSteeringAngle(int steeringAngle){
 
             int steeringAngleDegrees = ((steeringAngle*180)/M_PI);
             char output = 0x00;
             output = (((int)(steeringAngleDegrees)/4)+15)& 31;
 
             const string NAME = "sensorMemory";
-
             try{
                 std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
-                {
-                odcore::base::Lock l(sharedMemory);
-                char *p = static_cast<char*>(sharedMemory->getSharedMemory());
-                p[0] = output;
-                p[1] = '\0'
+                if (sharedMemory->isValid()) {
+                    {
+                    odcore::base::Lock l(sharedMemory);
+                    char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+                    p[0] = output;
+                    }
                 }
+                
             }
             catch(string &exception){
-                cerr << "sharedMemory not created " << exception << endl;
+            cerr << "sharedMemory not created " << exception << endl;
             }
         }
 
@@ -647,15 +652,15 @@ int32_t distance = 90; //280
             int INFRARED_FRONT_RIGHT = 5;
             int INFRARED_REAR_RIGHT = 1;
             int ULTRASONIC_FRONT_CENTER = 2;
-            int ULTRASONIC_FRONT_RIGHT = 3;
-            int INFRARED_BACK 4;
+            //int ULTRASONIC_FRONT_RIGHT = 3;
+            //int INFRARED_BACK = 4;
 
 
             bool turnToLeftLane = false;
             bool turnToRightLane = false;
             bool goForward = true;
             bool driveOnLeftLane = false;
-            bool onRightLaneTurnLeft = false;
+            //bool onRightLaneTurnLeft = false;
             int count=0;
 
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {

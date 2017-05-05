@@ -81,7 +81,8 @@ namespace scaledcars{
                 odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode body();
             protected:
                 bool readSharedImage(odcore::data::Container &c);
-                bool readSensorData(odcore::data::Container &container);
+                int readSensorData(int sensorId);
+                void sendSteeringAngle(int steeringAngle);
 
             private:
                 virtual void setUp();
