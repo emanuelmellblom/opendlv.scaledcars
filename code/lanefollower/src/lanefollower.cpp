@@ -185,15 +185,15 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
 
                 //cerr << "Image Converted" << endl;
 
-                vector<vector<cv::Point> > contours;
-                vector<cv::Vec4i> hierarchy;
+                // vector<vector<cv::Point> > contours;
+                // vector<cv::Vec4i> hierarchy;
 
-                cv::Mat m = grey_image.clone(); 
-                //cv::findContours(m, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-                cv::findContours(m, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+                // cv::Mat m = grey_image.clone(); 
+                // //cv::findContours(m, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+                // cv::findContours(m, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
 
-                cv::Scalar color = cv::Scalar(255, 0, 0);
-                cv::drawContours( m, contours, -1, color, 2, 8, hierarchy, 2, cv::Point() );
+                // cv::Scalar color = cv::Scalar(255, 0, 0);
+                // cv::drawContours( m, contours, -1, color, 2, 8, hierarchy, 2, cv::Point() );
 
                 // for( unsigned int i = 0; i< sizeof(contours); i++ ){
                 //     cv::Scalar color = cv::Scalar(255, 0, 0);
@@ -205,9 +205,9 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                 //grey_image = m;
 
                 // //Show the processed image if m_debug == true
-                if(!grey_image.empty() && m_debug){
-                     cv::imshow("Contours image", m);
-                 }
+                // if(!grey_image.empty() && m_debug){
+                //      cv::imshow("Contours image", m);
+                //  }
                 cvWaitKey(10);
             }
 

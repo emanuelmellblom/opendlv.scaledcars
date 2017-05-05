@@ -63,7 +63,7 @@ namespace scaledcars{
                  * of the assignment operator.
                  *
                  * @param obj Reference to an object of this class.
-                 * @return Reference to this instance.
+                 * @return Reference to this instance.v $(SOURCE_TREE_PATH):/opt/$(PROJECT_NAME).so
                  */
                 Overtaker& operator=(const Overtaker &/*obj*/);
 
@@ -81,6 +81,7 @@ namespace scaledcars{
                 odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode body();
             protected:
                 bool readSharedImage(odcore::data::Container &c);
+                bool readSensorData(odcore::data::Container &container);
 
             private:
                 virtual void setUp();
