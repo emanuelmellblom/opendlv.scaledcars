@@ -634,9 +634,9 @@ int32_t distance = 90; //280
                     processImage();
                 }
 
-	            // 1. Get most recent vehicle data:
-	            Container containerVehicleData = getKeyValueDataStore().get(VehicleData::ID());
-	            VehicleData vd = containerVehicleData.getData<VehicleData> ();
+                // 1. Get most recent vehicle data:
+                Container containerVehicleData = getKeyValueDataStore().get(VehicleData::ID());
+                VehicleData vd = containerVehicleData.getData<VehicleData> ();
 
                 // 2. Get most recent sensor board data:
                 Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
@@ -649,7 +649,7 @@ int32_t distance = 90; //280
                 /*
                 * TESTING STUFF
                 */
-                if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.1 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+                if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
                     //goForward = false;
                     cerr << "Object detected" << endl;
                     vc.setSpeed(1);
@@ -669,7 +669,7 @@ int32_t distance = 90; //280
 
 
                     vc.setSpeed(1);
-                    vc.setSteeringWheelAngle(-60);
+                    vc.setSteeringWheelAngle(-50);
                     Container cont(vc);
                     // Send container.
                     getConference().send(cont);
@@ -711,7 +711,7 @@ int32_t distance = 90; //280
                         if (c.getDataType() == odcore::data::image::SharedImage::ID()) {
                             has_next_frame = readSharedImage(c);
                         }
-                        if (true == has_next_frame) {
+                        if (true == has_next_frame){
                             //cerr << "has next frame" << endl;
                             processImage();
                         }
@@ -989,4 +989,3 @@ int32_t distance = 90; //280
 
     }
 //} // automotive::miniature
-

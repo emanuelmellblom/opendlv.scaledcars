@@ -180,41 +180,34 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
 
                 //Apply Canny edge detection 
                 Canny(grey_image, grey_image, 50, 200, 3);
+                //Canny(grey_image, grey_image, 50, 60, 3);
+
 
                 //cerr << "Image Converted" << endl;
 
-                //TEST Contours
-                // vector<vector<cv::Point>> contours;
-                // vector<Vec4i> hierarchy;
-                // cv::findContours(grey_image, grey_image, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE, cvPoint(0,0));
-                // //for (unsigned int i = 0; i < contours.size(); i++){
-                // for (unsigned int i = 0; i < sizeof(contours); i++){
-                //     if(hierarchy[i][3] >= 0){
-                //         cv::drawContours(grey_image, grey_image, i, cv::Scalar(2,55,0,0),1,8);
-                //     }
-                // }
+                vector<vector<cv::Point> > contours;
+                vector<cv::Vec4i> hierarchy;
 
+                cv::Mat m = grey_image.clone(); 
+                //cv::findContours(m, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+                cv::findContours(m, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
 
-                // vector<vector<cv::Point> > contours;
-                // vector<cv::Vec4i> hierarchy;
-                // cv::RNG rng(12345);
-                // //Mat drawing = Mat::zeros( grey_image.size(), CV_8UC3 );
-                // //cv::findContours( grey_image, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
-             
-                // //cv::Mat drawing = cv::Mat::zeros( sizeof(grey_image), CV_8UC3 );
-                // cv::Mat m = grey_image.clone(); cv::findContours(m, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+                cv::Scalar color = cv::Scalar(255, 0, 0);
+                cv::drawContours( m, contours, -1, color, 2, 8, hierarchy, 2, cv::Point() );
 
                 // for( unsigned int i = 0; i< sizeof(contours); i++ ){
-                //     cv::Scalar color = cv::Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-                //     cv::drawContours( m, contours, i, color, 2, 8, hierarchy, 0, cv::Point() );
+                //     cv::Scalar color = cv::Scalar(255, 0, 0);
+                //    ///cv::drawContours( m, contours, i, color, 2, 8, hierarchy, 2, cv::Point() );
+                //     cv::drawContours( m, contours, i, color);
                 // }
-                // //END TEST Contours
+                //END TEST Contours
+
+                //grey_image = m;
 
                 // //Show the processed image if m_debug == true
-                // if(!grey_image.empty() && m_debug){
-
-                //     cv::imshow("Processed image", m);
-                // }
+                if(!grey_image.empty() && m_debug){
+                     cv::imshow("Contours image", m);
+                 }
                 cvWaitKey(10);
             }
 
