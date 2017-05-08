@@ -168,7 +168,6 @@ int32_t distance = 90; //280
                             returnValue = value;
                             break;
                         }
-
                         // Sleep some time.
                         //const uint32_t ONE_SECOND = 1000 * 1000;
                         odcore::base::Thread::usleepFor(1000);
@@ -203,7 +202,6 @@ int32_t distance = 90; //280
             cerr << "sharedMemory not created " << exception << endl;
             }
         }
-
 
         void Overtaker::processImage() {
 
@@ -701,7 +699,10 @@ int32_t distance = 90; //280
                 /*
                  * Main overtaking Algorithm
                 */
-                if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+
+                //Check for object Simulator
+                //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 7.2 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
                     //goForward = false;
                     cerr << "Object detected" << endl;
                     
@@ -742,10 +743,11 @@ int32_t distance = 90; //280
                         sendSteeringAngle(0);
                     }
 
-                    double di = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
-                    cerr << "IR front right = " << di << endl;
+                    //double di = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
+                    //cerr << "IR front right = " << di << endl;
                     
-                    if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 2.60){
+                    //if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 2.60){
+                    if(readSensorData(INFRARED_FRONT_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) < 2.60){
 
                         driveOnLeftLane = true;
                         turnToLeftLane = false;
@@ -756,7 +758,8 @@ int32_t distance = 90; //280
                    
                     distance = 280;
                     cerr << "driving on the left lane" << endl;
-                    while((sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 || sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
+                    //while((sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 || sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
+                    while((readSensorData(INFRARED_FRONT_RIGHT) > 0 || readSensorData(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
 
                         double sensorF = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
                         double sensorB = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
@@ -790,7 +793,8 @@ int32_t distance = 90; //280
                             sendSteeringAngle(steering);
                         }
 
-                        if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT)<0){
+                        //if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT)<0){
+                        if(readSensorData(INFRARED_FRONT_RIGHT)<0){
                             cerr << "breakin out of while" << endl;
                             break;
                         }
@@ -815,9 +819,9 @@ int32_t distance = 90; //280
                     cerr << "Infrared front right = " <<  inf4 << endl;
 
                     //double v = sbd.getValueForKey_MapOfDistances(ULTRASONIC_REAR_RIGHT)
-              
-                   //if(count<=46 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_REAR_RIGHT) < 0 && sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0){                 
-                        if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
+                             
+                        //if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
+                        if(readSensorData(INFRARED_REAR_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) < 0){
                             count++;
                             double inf = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
                             cerr << "Infrared rear right = " <<  inf << endl;
