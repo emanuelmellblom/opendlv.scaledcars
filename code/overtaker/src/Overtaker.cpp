@@ -162,7 +162,7 @@ int32_t distance = 90; //280
                         //Extract the sensor ID from the received byte
                         id = p[sensorId] >> 5 & 0x03;
                         //Extract the sensor value from the received byte
-                        value = p[sensorId] & 0xfe;
+                        value = p[sensorId] & 31;
                         }
                         if(id == sensorId){
                             returnValue = value;
