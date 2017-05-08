@@ -84,7 +84,7 @@ int32_t distance = 90; //280
 
         void Overtaker::setUp() {
             // This method will be call automatically _before_ running body().
-            cerr << "setting up" << endl;
+            //cerr << "setting up" << endl;
         }
 
         void Overtaker::tearDown() {
@@ -196,10 +196,9 @@ int32_t distance = 90; //280
                     p[0] = output;
                     }
                 }
-                
             }
             catch(string &exception){
-            cerr << "sharedMemory not created " << exception << endl;
+                cerr << "sharedMemory not created " << exception << endl;
             }
         }
 
@@ -209,15 +208,6 @@ int32_t distance = 90; //280
             double e = 0;
 
             int32_t CONTROL_SCANLINE = 262;// 462, (372), 252 
-            
-            // if(m_simulator){
-            //     CONTROL_SCANLINE = 462;
-            // }else{
-            //     CONTROL_SCANLINE = 222;
-            // }
-
-            //const int32_t CONTROL_SCANLINE = 462; // calibrated length to right: 280px
-            //const int32_t distance = 150; //280
 
             cv::Mat grey_image;
             if(m_image!=NULL){
@@ -238,20 +228,6 @@ int32_t distance = 90; //280
 
                 //Apply Canny edge detection 
                 Canny(grey_image, grey_image, 50, 200, 3);
-
-                //cerr << "Image Converted" << endl;
-
-                //TEST Contours
-                // vector<vector<cv::Point>> contours;
-                // vector<Vec4i> hierarchy;
-                // cv::findContours(grey_image, grey_image, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE, cvPoint(0,0));
-                // //for (unsigned int i = 0; i < contours.size(); i++){
-                // for (unsigned int i = 0; i < sizeof(contours); i++){
-                //     if(hierarchy[i][3] >= 0){
-                //         cv::drawContours(grey_image, grey_image, i, cv::Scalar(2,55,0,0),1,8);
-                //     }
-                // }
-
 
                 // vector<vector<cv::Point> > contours;
                 // vector<cv::Vec4i> hierarchy;
@@ -293,9 +269,6 @@ int32_t distance = 90; //280
             int missingLeftLane = 0;
             //int lastLeftDistance = 0;
 
-            //cerr << lastRightDistance << endl;
-
-
             //Lane detecting algorithm
             list<CvPoint> unsorted;
             list<CvPoint> unsortedLeft;
@@ -333,13 +306,7 @@ int32_t distance = 90; //280
                 //TEST VOTING Find correct poits detected ---------------------------------------
                 //Right Lane
                 if (right.x > 0) {
-                    //cerr << "In the storing if--------------------" << endl;
                     rightLaneCount++;
-                    //lastRightDistance = right.x;
-                    //int point[2] = {right.x, y};
-                    //CvPoint* point;
-                    //point->x = right.x;
-                    //point->y = y;
                     unsorted.push_front(right);
                 } else {
                     missingRightLane++;
@@ -348,7 +315,6 @@ int32_t distance = 90; //280
                 //Left Lane
                 if (left.x > 0) {
                     leftLaneCount++;
-                    //lastLeftDistance = left.x;
                     unsortedLeft.push_front(left);
                 } else {
                     missingLeftLane++;
@@ -357,27 +323,15 @@ int32_t distance = 90; //280
 
                 if (m_debug) {
                     if (left.x > 0) {
-                        //CvScalar green = CV_RGB(0, 255, 0);
-                        //cvLine(temp, cvPoint(temp->width/2, y), left, green, 1, 8);
-
                         stringstream sstr;
                         sstr << (temp->width / 2 - left.x);
-                        //cvPutText(temp, sstr.str().c_str(), cvPoint(temp->width/2 - 100, y - 2), &m_font, green);
-                        //imgProc.line(temp,(temp->width/2 - 100), y-2, new cv::Scalar(0,255,0),3);
-
                         cv::line(grey_image, cv::Point2i(temp->width / 2, y), left, cv::Scalar(255, 0, 0), 1, 8);
 
 
                     }
                     if (right.x > 0) {
-                        //cerr << "right" << endl;
-                        //CvScalar red = CV_RGB(255, 0, 0);
-                        //cvLine(temp, cvPoint(temp->width/2, y), right, red, 1, 8);
-
                         stringstream sstr;
                         sstr << (right.x - temp->width / 2);
-                        //cvPutText(temp, sstr.str().c_str(), cvPoint(temp->width/2 + 100, y - 2), &m_font, red);
-
                         cv::line(grey_image, cv::Point2i(temp->width / 2, y), right, cv::Scalar(255, 0, 0), 1, 8);
                     }
                 }
@@ -423,29 +377,17 @@ int32_t distance = 90; //280
                         list <CvPoint> *listPointer = &sorted.front();
 
                         while (unsorted.size() != 0) {
-                            //cerr << "First = " << (h.x+t.x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x << endl;
-                            //CvScalar pix = cvGet2D(temp, (h[0]+t[0])/2, (h[1]+t[1])/2);
                             CvScalar pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
-                            //cerr << "beforeif" << endl;
                             if (pix.val[0] >= 200) {
-                                //cerr << "########Finds a white pixel in first if########" << endl;
-                                //cerr << "in if" << endl;
                                 listPointer->push_back(t);
                             } else {
-                                //cerr << "##does not see a white##" << endl;
-                                //cerr << "in else" << endl;
-                                //listPointer->push_back(t);
                                 unsigned int i;
                                 for (i = 0; i < sorted.size(); i++) {
-                                    //cerr << "First2 = " << (h->x+t->x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x;
                                     pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
                                     if (pix.val[0] >= 200) {
-                                        //cerr << "########Finds a white pixel in for loop ########" << endl;
-
                                         listPointer->push_back(t);
                                         break;
                                     } else {
-                                        //list<int*> tempList = sorted.front();
                                         list <CvPoint> tempList = sorted.front();
                                         sorted.pop_front();
                                         listPointer = &sorted.front();
@@ -462,27 +404,16 @@ int32_t distance = 90; //280
                             h = t;
                             t = unsorted.front();
                             if (unsorted.size() != 0)unsorted.pop_front();
-                            //else t = 0;
                         }
-                        //cerr << "out of first while" << endl;
-                        //list<int*> l = sorted.front();
                         list <CvPoint> l = sorted.front();
-                        //cerr << "in between " << endl;
                         sorted.pop_front();
                         while (sorted.size() != 0) {
-                            //cerr << "in second while" << endl;
                             if (sorted.front().size() > l.size()) {
                                 l = sorted.front();
                             }
                             sorted.pop_front();
                         }
-                        //cerr << "out of second while" << endl;
-
                         e = ((l.front().x - temp->width / 2.0) - distance) / distance;
-                        // else{
-                        //     e = (distance - (temp->width/2.0 - left.x))/distance;
-                        // }
-
                         /*
                          * LEFT LANE
                          */
@@ -498,29 +429,17 @@ int32_t distance = 90; //280
                         list <CvPoint> *listPointer = &sorted.front();
 
                         while (unsortedLeft.size() != 0) {
-                            //cerr << "First = " << (h.x+t.x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x << endl;
-                            //CvScalar pix = cvGet2D(temp, (h[0]+t[0])/2, (h[1]+t[1])/2);
                             CvScalar pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
-                            //cerr << "beforeif" << endl;
                             if (pix.val[0] >= 200) {
-                                //cerr << "########Finds a white pixel in first if########" << endl;
-                                //cerr << "in if" << endl;
                                 listPointer->push_back(t);
                             } else {
-                                //cerr << "##does not see a white##" << endl;
-                                //cerr << "in else" << endl;
-                                //listPointer->push_back(t);
                                 unsigned int i;
                                 for (i = 0; i < sorted.size(); i++) {
-                                    //cerr << "First2 = " << (h->x+t->x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x;
                                     pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
                                     if (pix.val[0] >= 200) {
-                                        //cerr << "########Finds a white pixel in for loop ########" << endl;
-
                                         listPointer->push_back(t);
                                         break;
                                     } else {
-                                        //list<int*> tempList = sorted.front();
                                         list <CvPoint> tempList = sorted.front();
                                         sorted.pop_front();
                                         listPointer = &sorted.front();
@@ -537,27 +456,16 @@ int32_t distance = 90; //280
                             h = t;
                             t = unsortedLeft.front();
                             if (unsortedLeft.size() != 0)unsortedLeft.pop_front();
-                            //else t = 0;
                         }
-                        //cerr << "out of first while" << endl;
-                        //list<int*> l = sorted.front();
                         list <CvPoint> l = sorted.front();
-                        //cerr << "in between " << endl;
                         sorted.pop_front();
                         while (sorted.size() != 0) {
-                            //cerr << "in second while" << endl;
                             if (sorted.front().size() > l.size()) {
                                 l = sorted.front();
                             }
                             sorted.pop_front();
                         }
-                        //cerr << "out of second while" << endl;
-
-                        //e = ((l.front().x - temp->width/2.0) - distance)/distance;
                         e = (distance - (temp->width / 2.0 - l.front().x)) / distance;
-                        // else{
-                        //     e = (distance - (temp->width/2.0 - left.x))/distance;
-                        // }
                     }
 
                 }
@@ -578,14 +486,9 @@ int32_t distance = 90; //280
                 }
             }
 
-            
-
-
             TimeStamp currentTime;
             double timeStep = (currentTime.toMicroseconds() - m_previousTime.toMicroseconds()) / (1000.0 * 1000.0);
             m_previousTime = currentTime;
-
-
 
             if (fabs(e) < 1e-2) {
                 m_eSum = 0;
@@ -599,17 +502,11 @@ int32_t distance = 90; //280
             const double Ki = 3.103197570937628;
             const double Kd = 0.030450210485408566;
 
-            //const double Kp = 1.0;
-            //const double Ki = 0.01;
-            //const double Kd = 0.1;
-
-             //cerr << "e = " << e << endl;
             const double p = Kp * e;
             const double i = Ki * timeStep * e;// * m_eSum; // * e
             const double d = Kd * (e - m_eOld)/timeStep;
             m_eOld = e;
 
-            //const double y = p + i + d;
             const double y = p + i + d;
 
             double desiredSteering = 0;
