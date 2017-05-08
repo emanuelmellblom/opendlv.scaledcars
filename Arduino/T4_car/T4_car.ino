@@ -136,13 +136,15 @@ char sensorId = 0;
 
 char I2C[2] = {ultrasonic_Front_Center, ultrasonic_Front_Side};
 //data storage
-char SensorData[6] = {'0', '0', '0', '0', '0'};
+char SensorData[6] = {'0', '0', '0', '0', '0','0'};
+
+
 void loop() {		
 
 		int n=0;
 	  	
 		unsigned long times = millis();
-
+		Serial.println(String(digitalRead(odometer)));
 		
 	 	n=readSensor(25,frontRightIrSensor);
 	 	char distanceFrontRightIr = (n < 20 ? (n) : 0) / 2 & 31; //Calculate the distance in centimeters and store the value in a variable
@@ -155,8 +157,9 @@ void loop() {
 	 	SensorData[1] = distanceBackRightIr;
 	
 		n=readSensor(25,backIrSensor);
-	 	char distanceBackIr = (n < 20 ? ( n) : 0) / 2 & 31;
-	 	distanceBackRightIr |=	4 << 5;
+	 	char distanceBackIr = ((n < 20 ? ( n) : 0) / 2 & 31) | (4 << 5);
+	 	//distanceBackIr|=(4 << 5);
+	 	//distanceBackRightIr |=	(4 << 5);
 	 	SensorData[4] = distanceBackIr;
 
 
@@ -193,14 +196,16 @@ void loop() {
     for (int i = 0; i < 1; i++) {
       char v = readI2C(I2C[sensorId]);
       //if(sensorId==0)Serial.println("ping "+String((int)v));
-      SensorData[2 + sensorId] = ((v < 30 && v != 0 ? v : 0) / 2 & 31); // | ((2+sensorId)<<5);
+      SensorData[2 + sensorId] = ((v < 30 && v != 0 ? v : 0) / 2 & 31)| ((2+sensorId)<<5);
     }
     ping = true;
     sensorId = (sensorId + 1) % 2;
   }
 
   for (int i = 1; i < sizeof(SensorData); i++) {
-    Serial.println((SensorData[i]));
+  //	Serial.println(SensorData[i]);
+  	
+    //Serial.println(String((SensorData[5]&31)*2)+" id "+String((SensorData[5]>>5)&7));
   }
 
 
@@ -241,7 +246,7 @@ void loop() {
     car->setAngle(90);
   }
 
-  Serial.println(" time" +String(millis()-times));
+  Serial.println(" delay " +String(millis()-times));
 
 
 
