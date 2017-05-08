@@ -117,7 +117,6 @@ namespace automotive {
 				SerialRead handler;
 				serial->setStringListener(&handler);
 		
-				
 				/*std::stringstream bufferStream;
 					bufferStream<<(char)captureCounter;
 					std::string output=bufferStream.str();
@@ -145,18 +144,23 @@ namespace automotive {
 					char input;
 					if((serialInput.size()>0?(input=serialInput.at(0))!=13&&input!=10?input:0:0)!=0){ 
 						
-						cerr<<(int)(input)<<endl;
+
+						cerr<<"Id = " << (int)((input >> 5) & 0x07) << " Value = " << (int)(input&31)*2 << endl;
 						
 						odcore::base::Lock o(overtaking);  
 						//char *p = static_cast<char*>(overtaking->getSharedMemory());					
-						p[intput>>5]=input;
+						p[(input>>5)&7]=input;
 						
 						
 					}
 					
 					if(p[0]!=0){
-						serial->send(p[0]);
+						std::stringstream stream;
+						stream<<p[0];
+						std::string value=stream.str();
+						serial->send(value);
 						p[0]=0;
+						cerr << "sending" << endl;
 					}
 					
 					

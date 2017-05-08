@@ -82,7 +82,7 @@ namespace scaledcars{
             protected:
                 bool readSharedImage(odcore::data::Container &c);
                 int readSensorData(int sensorId);
-                void sendSteeringAngle(int steeringAngle);
+                void sendSteeringAngle(double steeringAngle);
 
             private:
                 virtual void setUp();

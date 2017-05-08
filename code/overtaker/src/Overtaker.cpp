@@ -61,7 +61,7 @@ namespace scaledcars{
 //NEW FROM LANEFOLLOWER
 using namespace odcore::data::image;
 double steering;
-int32_t distance = 90; //280
+int32_t distance = 280; //280
 //------
 
 
@@ -72,7 +72,7 @@ int32_t distance = 90; //280
             m_sharedImageMemory(),
             m_image(NULL),
             m_debug(true), //Have true to show detected lane markings, debugging prints and debugging camera windows
-            m_simulator(true), //Set m_simulator to true if simulator is used and false otherwise.
+            m_simulator(false), //Set m_simulator to true if simulator is used and false otherwise.
             m_font(),
             m_previousTime(),
             m_eSum(0),
@@ -150,7 +150,7 @@ int32_t distance = 90; //280
                 std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
 
                 if (sharedMemory->isValid()) {
-                    uint32_t counter = 10;
+                    uint32_t counter = 30;
                     while (counter-- > 0) {
                         int id;
                         int value;
@@ -180,11 +180,15 @@ int32_t distance = 90; //280
             return returnValue;
         }
 
-        void Overtaker::sendSteeringAngle(int steeringAngle){
+        void Overtaker::sendSteeringAngle(double steeringAngle){
 
-            int steeringAngleDegrees = ((steeringAngle*180)/M_PI);
+            cerr << "org = " << steeringAngle << endl;
+            double steeringAngleDegrees = ((steeringAngle*180)/M_PI);
+            cerr << "steeringAngle = " << steeringAngleDegrees << endl;
             char output = 0x00;
             output = (((int)(steeringAngleDegrees)/4)+15)& 31;
+
+            
 
             const string NAME = "sensorMemory";
             try{
@@ -595,7 +599,7 @@ int32_t distance = 90; //280
 
                 //Check for object Simulator
                 //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
-                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 7.2 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 20 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
                     cerr << "Object detected" << endl;
                     
                     if(m_simulator){
@@ -698,7 +702,7 @@ int32_t distance = 90; //280
 
                 else if(turnToRightLane){
                     
-                    distance = 90;
+                    distance = 280;
 
                     cerr << "Turn back to right lane" << endl;
                     double inf3 = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
@@ -763,7 +767,9 @@ int32_t distance = 90; //280
                         vc.setSpeed(1);
                         vc.setSteeringWheelAngle(steering);
                     }else{
+                        cerr << "styr" << steering <<endl; 
                         sendSteeringAngle(steering);
+
                     }
                 }
                 
