@@ -662,25 +662,21 @@ int32_t distance = 90; //280
             int count=0;
 
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
-                //cerr << "Running" << endl;
 
                 bool has_next_frame = false;
-                  //cerr << "In body" << endl;
 
                 // Get the most recent available container for a SharedImage.
                 Container c = getKeyValueDataStore().get(odcore::data::image::SharedImage::ID());
                 
-                 m_vehicleControl.setSpeed(2); //1
+                if(m_simulator){
+                    m_vehicleControl.setSpeed(2); //1
+                }
                 if (c.getDataType() == odcore::data::image::SharedImage::ID()) {
-                    //cerr << "is shared image" << endl;
-                    // Example for processing the received container.
                     has_next_frame = readSharedImage(c);
-                    //cerr << "read frame" << endl;
                 }
 
                 // Process the read image and calculate regular lane following set values for control algorithm.
                 if (true == has_next_frame) {
-                    //cerr << "has next frame" << endl;
                     processImage();
                 }
 
@@ -703,7 +699,6 @@ int32_t distance = 90; //280
                 //Check for object Simulator
                 //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
                 if(readSensorData(ULTRASONIC_FRONT_CENTER) < 7.2 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
-                    //goForward = false;
                     cerr << "Object detected" << endl;
                     
                     if(m_simulator){
@@ -722,8 +717,6 @@ int32_t distance = 90; //280
 
                 else if(turnToLeftLane){  
                     cerr << "turn to the left lane" << endl;
-                    //vc.setSpeed(1);
-                    //vc.setSteeringWheelAngle(-45); //-45
 
                     if(m_simulator){
                         vc.setSpeed(1);
@@ -772,13 +765,11 @@ int32_t distance = 90; //280
                             has_next_frame = readSharedImage(c);
                         }
                         if (true == has_next_frame){
-                            //cerr << "has next frame" << endl;
                             processImage();
                         }
 
                         // Process the read image and calculate regular lane following set values for control algorithm.
                         if (true == has_next_frame) {
-                            //cerr << "has next frame" << endl;
                             processImage();
                         }
                         cerr << "Go forward in while" << endl;
