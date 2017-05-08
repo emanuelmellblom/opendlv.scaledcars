@@ -31,7 +31,7 @@
 #define SERIAL_PORT "/dev/ttyACM"
 #define BAUD_RATE 9600
 
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 8
 
 //#include "Camera.h"
 
@@ -70,6 +70,7 @@ namespace automotive {
 				std::shared_ptr<SerialPort> serial;
 				std::shared_ptr<SharedMemory> laneFollower;
 				std::shared_ptr<SharedMemory> overtaking;
+				
               //  unique_ptr<odtools::recorder::Recorder> m_recorder;
                // unique_ptr<Camera> m_camera;
         };
