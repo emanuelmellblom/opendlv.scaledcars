@@ -83,7 +83,7 @@ namespace automotive {
 			
 			try{
 				laneFollower = std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("1", BUFFER_SIZE));
-				overtaking= std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("2", BUFFER_SIZE));
+				overtaking= std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("sensorMemory", BUFFER_SIZE));
 				std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::createSharedMemory("dsads", 10));
 				if (overtaking->isValid()) {
 					cerr<<"valid memory \n";
@@ -116,21 +116,8 @@ namespace automotive {
             uint32_t captureCounter = 0;
 				SerialRead handler;
 				serial->setStringListener(&handler);
-				//serial->send("m 0");
+		
 				
-				//serial->send("m 0");
-				
-				/*for(int i=0;i<10;i++){
-					//serial->send("m 0");
-				//	const uint32_t ONE_SECOND = 1000 * 1000;
-				//odcore::base::Thread::usleepFor( ONE_SECOND);
-				}*/
-				
-				
-				
-			serial->start();
-			
-            while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
 				/*std::stringstream bufferStream;
 					bufferStream<<(char)captureCounter;
 					std::string output=bufferStream.str();
@@ -143,36 +130,37 @@ namespace automotive {
 				
 				
 				
-				/*
-				 * Do something with the serial data
-				 * */
-				string serialInput=handler.readstr();
-				char input;
-				if((serialInput.size()>0?(input=serialInput.at(0))!=13&&input!=10?input:0:0)!=0){ 
+				
+				
+			serial->start();
+			
+				char *p = static_cast<char*>(overtaking->getSharedMemory());
+				
+				while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
 					
-					cerr<<(int)(input)<<endl;
+					/*
+					 * Do something with the serial data
+					 * */
+					string serialInput=handler.readstr();
+					char input;
+					if((serialInput.size()>0?(input=serialInput.at(0))!=13&&input!=10?input:0:0)!=0){ 
+						
+						cerr<<(int)(input)<<endl;
+						
+						odcore::base::Lock o(overtaking);  
+						//char *p = static_cast<char*>(overtaking->getSharedMemory());					
+						p[intput>>5]=input;
+						
+						
+					}
 					
-					odcore::base::Lock o(overtaking);  
-					char *p = static_cast<char*>(overtaking->getSharedMemory());
-					//s = string(p);
+					if(p[0]!=0){
+						serial->send(p[0]);
+						p[0]=0;
+					}
 					
-					p[0]=input;
-					p[1]='\0';
 					
 				}
-				
-				
-				/*odcore::base::Lock l(laneFollower);
-               char *p = static_cast<char*>(laneFollower->getSharedMemory());
-                string s = string(p);
-                p[0];*/
-              
-                
-               
-                //if(s==string((char*)255))cerr<<"hellow owlre\n";
-                //if(s==string((char*)1))cerr<<"hellow owlre\n";*/
-   
-            }
             
             serial->stop();
 			serial->setStringListener(NULL);
