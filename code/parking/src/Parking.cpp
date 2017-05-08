@@ -52,19 +52,23 @@ namespace automotive {
         vector<double> Parking::getFoundGaps() const {
             return m_foundGaps;
         }
-
+        
         // This method will do the main data processing job.
         odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode Parking::body() {
-            double distanceOld = 0;
-            double absPathStart = 0;
-            double absPathEnd = 0;
-
-            int stageMoving = 0;
-            int stageMeasuring = 0;
-
-            VehicleControl vc;
-
+        
+            // Used to step through the hardcoded parking sequence
+            // Measured in milliseconds
+            double parkTimer = 0;
+            TimeStamp lastTime;
+        
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
+            
+                 //const int32_t ULTRASONIC_FRONT_CENTER = 2;
+                 //const int32_t ULTRASONIC_FRONT_RIGHT = 3;
+                 const int32_t INFRARED_FRONT_RIGHT = 5;
+                 const int32_t INFRARED_REAR_RIGHT = 1;
+                 //const int32_t INFRARED_BACK = 1;
+            
                 // 1. Get most recent vehicle data:
                 Container containerVehicleData = getKeyValueDataStore().get(automotive::VehicleData::ID());
                 VehicleData vd = containerVehicleData.getData<VehicleData> ();
@@ -74,97 +78,64 @@ namespace automotive {
                 SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
 
                 // Create vehicle control data.
+                VehicleControl vc;
 
                 // Moving state machine.
-                if (stageMoving == 0) {
+                if (state == Search) {
                     // Go forward.
-                    vc.setSpeed(1.5);
+                    vc.setSpeed(1);
                     vc.setSteeringWheelAngle(0);
+                    
+                    // Get odometer value
+                    currentSpaceSize += 1; // 1 to be replaced with time traveled since last check
+                    
+                    // Check if an object is blocking the space.
+                    // If it is, reset space size
+                    if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 7.2 && sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) < 7.2){
+                        //goForward = false;
+                        cerr << "Object detected" << endl;
+                        currentSpaceSize = 0;
+                    }
+                    
+                    // If space size is big enough, start parking
+                    if(currentSpaceSize > minSpaceSize){
+                        state = Park;
+                    }
                 }
-                if ((stageMoving > 0) && (stageMoving < 20)) {
-                    // Move slightly forward.
-                    vc.setSpeed(0);
-                    vc.setSteeringWheelAngle(0);
-                    stageMoving++;
-                }
-                if ((stageMoving >= 20) && (stageMoving < 25)) {
-                    // Stop.
-                    vc.setSpeed(0);
-                    vc.setSteeringWheelAngle(0);
-                    stageMoving++;
-                }
-                if ((stageMoving >= 25) && (stageMoving < 40)) {
+                // Parking
+                else{               
+                
+                    TimeStamp currentTime;
+                    
+                    // Deltatime may be used in the search state 
+                    // for distance if only velocity is available
+                    double deltaTime = (lastTime.toMicroseconds() - currentTime.toMicroseconds()) / 1000.0;
+                    parkTimer += deltaTime;
+                    
+                    // If 
+                            
+                    // Stop completely
+                    if (parkTimer < 1000) {
+                        vc.setSpeed(0);
+                        vc.setSteeringWheelAngle(0);
+                    }
                     // Backwards, steering wheel to the right.
-                    vc.setSpeed(0);
-                    vc.setSteeringWheelAngle(90);
-                    stageMoving++;
+                    else if (parkTimer < 2000) {
+                        vc.setSpeed(-2);
+                        vc.setSteeringWheelAngle(90);
+                    }
+                    else if (parkTimer < 3000) {
+                        vc.setSpeed(-2);
+                        vc.setSteeringWheelAngle(-90);
+                    }
+                    // Finally, stop again
+                    else if (parkTimer < 4000) {
+                        vc.setSpeed(0);
+                        vc.setSteeringWheelAngle(0);
+                    }
+                    
+                    lastTime = currentTime;
                 }
-                if ((stageMoving >= 40) && (stageMoving < 80)) {
-                    // Backwards, steering wheel to the right.
-                    vc.setSpeed(-2);
-                    vc.setSteeringWheelAngle(90);
-                    stageMoving++;
-                }
-                if ((stageMoving >= 80) && (stageMoving < 108)) {
-                    // Backwards, steering wheel to the right.
-                    vc.setSpeed(-2);
-                    vc.setSteeringWheelAngle(-90);
-                    stageMoving++;
-                }
-                if (stageMoving >= 108) {
-                    // Stop.
-                    vc.setSpeed(0);
-                    vc.setSteeringWheelAngle(0);
-
-                    stageMoving++;
-                }
-                if (stageMoving >= 150) {
-                    // End component.
-                    break;
-                }
-
-                // Measuring state machine.
-                switch (stageMeasuring) {
-                    case 0:
-                        {
-                            // Initialize measurement.
-                            distanceOld = sbd.getValueForKey_MapOfDistances(2);
-                            stageMeasuring++;
-                        }
-                    break;
-                    case 1:
-                        {
-                            // Checking for distance sequence +, -.
-                            if ((distanceOld > 0) && (sbd.getValueForKey_MapOfDistances(2) < 0)) {
-                                // Found distance sequence +, -.
-                                stageMeasuring = 2;
-                                absPathStart = vd.getAbsTraveledPath();
-                            }
-                            distanceOld = sbd.getValueForKey_MapOfDistances(2);
-                        }
-                    break;
-                    case 2:
-                        {
-			    cerr << "stageMoving = " << stageMoving << endl;
-                            // Checking for distance sequence -, +.
-                            if ((distanceOld < 0) && (sbd.getValueForKey_MapOfDistances(2) > 0)) {
-                                // Found distance sequence -, +.
-                                stageMeasuring = 1;
-                                absPathEnd = vd.getAbsTraveledPath();
-
-                                const double GAP_SIZE = (absPathEnd - absPathStart);
-                                cerr << "Size !!!! = " << GAP_SIZE << " | Turn " << vc.getSteeringWheelAngle() << endl;
-                                m_foundGaps.push_back(GAP_SIZE);
-
-                                if ((stageMoving < 1) && (GAP_SIZE > 3.5)) {
-                                    stageMoving = 1;
-                                }
-                            }
-                            distanceOld = sbd.getValueForKey_MapOfDistances(2);
-                        }
-                    break;
-                }
-
                 // Create container for finally sending the data.
                 Container c(vc);
                 // Send container.
