@@ -17,134 +17,241 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <stdint.h>
+#include <list>
+#include <opendavinci/odcore/base/Thread.h>
+
 #include <iostream>
+#include <cstring>
 
-#include "opendavinci/odcore/data/Container.h"
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
-#include "opendavinci/GeneratedHeaders_OpenDaVINCI.h"
-#include "automotivedata/GeneratedHeaders_AutomotiveData.h"
+#include <opendavinci/odcore/base/Lock.h>
+#include <opendavinci/odcore/wrapper/SharedMemoryFactory.h>
 
-#include "Parking.h"
+#include "odvdscaledcarsdatamodel/generated/chalmersrevere/scaledcars/ExampleMessage.h"
 
-namespace automotive {
-    namespace miniature {
+#include "opendavinci/odcore/base/KeyValueConfiguration.h"
+#include "opendavinci/odcore/data/TimeStamp.h"
 
-        using namespace std;
-        using namespace odcore::base;
-        using namespace odcore::base::module;
-        using namespace odcore::data;
-        using namespace automotive;
+namespace scaledcars {
 
-        Parking::Parking(const int32_t &argc, char **argv) :
-            TimeTriggeredConferenceClientModule(argc, argv, "Parking"),
-            m_foundGaps() {}
+	using namespace std;
+	using namespace odcore::base;
+	using namespace odcore::data;
+	using namespace odcore;
+	using namespace odcore::wrapper;
+	using namespace automotive;
+	using namespace automotive::miniature;
 
-        Parking::~Parking() {}
+	Parking::Parking(const int32_t &argc, char **argv) :
+		TimeTriggeredConferenceClientModule(argc, argv, "Parking"),
+		m_foundGaps(),
+		m_simulator(false) {} //Set m_simulator to true if simulator is used and false otherwise.
 
-        void Parking::setUp() {
-            // This method will be call automatically _before_ running body().
-        }
+    Parking::~Parking() {}
 
-        void Parking::tearDown() {
-            // This method will be call automatically _after_ return from body().
-        }
+    void Parking::setUp() {
+        // This method will be call automatically _before_ running body().
+    }
 
-        vector<double> Parking::getFoundGaps() const {
-            return m_foundGaps;
-        }
+    void Parking::tearDown() {
+        // This method will be call automatically _after_ return from body().
+    }
+
+
+	int Overtaker::readSensorData(int sensorId) {
+		const string NAME = "sensorMemory";
+		int returnValue;
+
+		// We are using OpenDaVINCI's std::shared_ptr to automatically release any acquired resources.
+		try {
+			std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
+
+			if (sharedMemory->isValid()) {
+				uint32_t counter = 30;
+				while (counter-- > 0) {
+					int id;
+					int value;
+					{
+						// Using a scoped lock to lock and automatically unlock a shared memory segment.
+						odcore::base::Lock l(sharedMemory);
+						char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+
+						//Extract the sensor ID from the received byte
+						id = p[sensorId] >> 5 & 0x03;
+						//Extract the sensor value from the received byte
+						value = p[sensorId] & 31;
+					}
+					if (id == sensorId) {
+						returnValue = value;
+						break;
+					}
+					// Sleep some time.
+					//const uint32_t ONE_SECOND = 1000 * 1000;
+					odcore::base::Thread::usleepFor(1000);
+				}
+			}
+		}
+		catch (string &exception) {
+			cerr << "Sensor memory could not created: " << exception << endl;
+		}
+		return returnValue;
+	}
+
+	void Overtaker::sendSteeringAngle(double steeringAngle) {
+
+		cerr << "org = " << steeringAngle << endl;
+		double steeringAngleDegrees = ((steeringAngle * 180) / M_PI);
+		cerr << "steeringAngle = " << steeringAngleDegrees << endl;
+		char output = 0x00;
+		output = (((int)(steeringAngleDegrees) / 4) + 15) & 31;
+
+
+
+		const string NAME = "sensorMemory";
+		try {
+			std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
+			if (sharedMemory->isValid()) {
+				{
+					odcore::base::Lock l(sharedMemory);
+					char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+					p[0] = output;
+				}
+			}
+		}
+		catch (string &exception) {
+			cerr << "sharedMemory not created " << exception << endl;
+		}
+	}
+
+
+    vector<double> Parking::getFoundGaps() const {
+        return m_foundGaps;
+    }
         
-        // This method will do the main data processing job.
-        odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode Parking::body() {
+    // This method will do the main data processing job.
+    odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode Parking::body() {
         
-            // Used to step through the hardcoded parking sequence
-            // Measured in milliseconds
-            double parkTimer = 0;
-            TimeStamp lastTime;
+        // Used to step through the hardcoded parking sequence
+        // Measured in milliseconds
+        double parkTimer = 0;
+        TimeStamp lastTime;
         
-            while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
+        while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
             
-                 //const int32_t ULTRASONIC_FRONT_CENTER = 2;
-                 //const int32_t ULTRASONIC_FRONT_RIGHT = 3;
-                 const int32_t INFRARED_FRONT_RIGHT = 5;
-                 const int32_t INFRARED_REAR_RIGHT = 1;
-                 //const int32_t INFRARED_BACK = 1;
+                //const int32_t ULTRASONIC_FRONT_CENTER = 2;
+                //const int32_t ULTRASONIC_FRONT_RIGHT = 3;
+                const int32_t INFRARED_FRONT_RIGHT = 5;
+                const int32_t INFRARED_REAR_RIGHT = 1;
+                //const int32_t INFRARED_BACK = 1;
             
-                // 1. Get most recent vehicle data:
-                Container containerVehicleData = getKeyValueDataStore().get(automotive::VehicleData::ID());
-                VehicleData vd = containerVehicleData.getData<VehicleData> ();
+            // 1. Get most recent vehicle data:
+            Container containerVehicleData = getKeyValueDataStore().get(automotive::VehicleData::ID());
+            VehicleData vd = containerVehicleData.getData<VehicleData> ();
 
-                // 2. Get most recent sensor board data describing virtual sensor data:
-                Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
-                SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
+            // 2. Get most recent sensor board data describing virtual sensor data:
+            Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
+            SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
 
-                // Create vehicle control data.
-                VehicleControl vc;
+            // Create vehicle control data.
+            VehicleControl vc;
 
-                // Moving state machine.
-                if (state == Search) {
-                    // Go forward.
-                    vc.setSpeed(1);
-                    vc.setSteeringWheelAngle(0);
+            // Moving state machine.
+            if (state == Search) {
+                // Go forward.
+				if (m_simulator) {
+					vc.setSpeed(1);
+					vc.setSteeringWheelAngle(0);
+				}
+				else {
+					sendSteeringAngle(0);
+					// TODO: Speed
+				}
                     
-                    // Get odometer value
-                    currentSpaceSize += 1; // 1 to be replaced with time traveled since last check
+                // Get odometer value
+                currentSpaceSize += 1; // 1 to be replaced with time traveled since last check
                     
-                    // Check if an object is blocking the space.
-                    // If it is, reset space size
-                    if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 7.2 && sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) < 7.2){
-                        //goForward = false;
-                        cerr << "Object detected" << endl;
-                        currentSpaceSize = 0;
-                    }
-                    
-                    // If space size is big enough, start parking
-                    if(currentSpaceSize > minSpaceSize){
-                        state = Park;
-                    }
+                // Check if an object is blocking the space.
+                // If it is, reset space size
+                if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 7.2 && sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) < 7.2){
+                    //goForward = false;
+                    cerr << "Object detected" << endl;
+                    currentSpaceSize = 0;
                 }
-                // Parking
-                else{               
-                
-                    TimeStamp currentTime;
                     
-                    // Deltatime may be used in the search state 
-                    // for distance if only velocity is available
-                    double deltaTime = (lastTime.toMicroseconds() - currentTime.toMicroseconds()) / 1000.0;
-                    parkTimer += deltaTime;
-                    
-                    // If 
-                            
-                    // Stop completely
-                    if (parkTimer < 1000) {
-                        vc.setSpeed(0);
-                        vc.setSteeringWheelAngle(0);
-                    }
-                    // Backwards, steering wheel to the right.
-                    else if (parkTimer < 2000) {
-                        vc.setSpeed(-2);
-                        vc.setSteeringWheelAngle(90);
-                    }
-                    else if (parkTimer < 3000) {
-                        vc.setSpeed(-2);
-                        vc.setSteeringWheelAngle(-90);
-                    }
-                    // Finally, stop again
-                    else if (parkTimer < 4000) {
-                        vc.setSpeed(0);
-                        vc.setSteeringWheelAngle(0);
-                    }
-                    
-                    lastTime = currentTime;
+                // If space size is big enough, start parking
+                if(currentSpaceSize > minSpaceSize){
+                    state = Park;
                 }
-                // Create container for finally sending the data.
-                Container c(vc);
-                // Send container.
-                getConference().send(c);
             }
-
-            return odcore::data::dmcp::ModuleExitCodeMessage::OKAY;
+            // Parking
+            else{               
+                
+                TimeStamp currentTime;
+                    
+                // Deltatime may be used in the search state 
+                // for distance if only velocity is available
+                double deltaTime = (lastTime.toMicroseconds() - currentTime.toMicroseconds()) / 1000.0;
+                parkTimer += deltaTime;
+                    
+                // If 
+                            
+                // Stop completely
+                if (parkTimer < 1000) {
+					if (m_simulator) {
+						vc.setSpeed(0);
+						vc.setSteeringWheelAngle(0);
+					}
+					else {
+						sendSteeringAngle(0);
+						// sendSpeed(0)
+					}
+                }
+                // Backwards, steering wheel to the right.
+                else if (parkTimer < 2000) {
+					if (m_simulator) {
+						vc.setSpeed(-2);
+						vc.setSteeringWheelAngle(90);
+					}
+					else {
+						sendSteeringAngle(90);
+						// sendSpeed(-2)
+					}
+                }
+                else if (parkTimer < 3000) {
+					if (m_simulator) {
+						vc.setSpeed(-2);
+						vc.setSteeringWheelAngle(-90);
+					}
+					else {
+						sendSteeringAngle(-90);
+						// sendSpeed(-2)
+					}
+                }
+                // Finally, stop again
+                else if (parkTimer < 4000) {
+					if (m_simulator) {
+						vc.setSpeed(0);
+						vc.setSteeringWheelAngle(0);
+					}
+					else {
+						sendSteeringAngle(0);
+						// sendSpeed(0)
+					}
+                }
+				// Maybe move forward until front sensor detects something?
+                    
+                lastTime = currentTime;
+            }
+            // Create container for finally sending the data.
+            Container c(vc);
+            // Send container.
+            getConference().send(c);
         }
 
-    } // miniature
-} // automotive
+        return odcore::data::dmcp::ModuleExitCodeMessage::OKAY;
+    }
 
+}

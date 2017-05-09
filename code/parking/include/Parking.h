@@ -81,6 +81,10 @@ namespace automotive {
 
             private:
                 vector<double> m_foundGaps;
+
+				int readSensorData(int sensorId);
+
+				void sendSteeringAngle(double steeringAngle);
         };
 
     } // miniature
