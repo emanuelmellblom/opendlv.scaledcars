@@ -1,7 +1,7 @@
 #include <Wire.h>
 #include <Servo.h>
 #include <SharpIR.h>
-#include <QTRSensors.h>
+//#include <QTRSensors.h>
 #include <RcCar.h>
 //#include <math.h>
 
@@ -88,7 +88,7 @@ void setup() {
 
   //Servos
   esc.attach(10);
-  steering.attach(3);
+  steering.attach(5);
   esc.write(1380);
 
   car = new RcCar(MAXFORWSPEED * 10, 1400, MAXREVSPEED * 10, 1100, 1380, esc, steering);
@@ -96,7 +96,9 @@ void setup() {
 
   Wire.begin();
   //Serial
+  Serial2.begin(9600);
   Serial.begin(9600);
+   //Serial.println("g");
 
 	/* for (int i = 0; i < 100; i++){
     	qtra.calibrate();       // reads all sensors 10 times at 2.5 ms per six sensors (i.e. ~25 ms per call)
@@ -111,6 +113,7 @@ void setup() {
 
 int readI2C(int address) {
   //Serial.println(String(Wire.requestFrom(address,1)));
+  Serial.println("helllo");
   Wire.requestFrom(address, 1);
   char x = (char)0;
   while (Wire.available()) {
@@ -141,11 +144,13 @@ char SensorData[6] = {'0', '0', '0', '0', '0','0'};
 
 void loop() {		
 
-		int n=0;
+		//
 	  	
 		unsigned long times = millis();
-		Serial.println(String(digitalRead(odometer)));
+		//
+		//Serial.println(String(digitalRead(odometer)));
 		
+		int n=0;
 	 	n=readSensor(25,frontRightIrSensor);
 	 	char distanceFrontRightIr = (n < 20 ? (n) : 0) / 2 & 31; //Calculate the distance in centimeters and store the value in a variable
 	 	distanceFrontRightIr |=	5 << 5;
@@ -195,7 +200,6 @@ void loop() {
     Wire.endTransmission(1);
     for (int i = 0; i < 1; i++) {
       char v = readI2C(I2C[sensorId]);
-      //if(sensorId==0)Serial.println("ping "+String((int)v));
       SensorData[2 + sensorId] = ((v < 30 && v != 0 ? v : 0) / 2 & 31)| ((2+sensorId)<<5);
     }
     ping = true;
@@ -203,16 +207,9 @@ void loop() {
   }
 
   for (int i = 1; i < sizeof(SensorData); i++) {
-  //	Serial.println(SensorData[i]);
-  	
+	Serial.println(SensorData[i]);
     //Serial.println(String((SensorData[5]&31)*2)+" id "+String((SensorData[5]>>5)&7));
   }
-
-
-	//qtra.read(sensorValues);
-
-	 //Serial.println(String(sensorValues[0]));
-
 
 
 
@@ -229,6 +226,7 @@ void loop() {
   if (Serial.available()) {
     char k = Serial.read();
     byteDecode(k, &speeds, &value);
+    Serial.println(k);
     car->setAngle(value + 120);
     
   } else {
@@ -246,7 +244,8 @@ void loop() {
     car->setAngle(90);
   }
 
-  Serial.println(" delay " +String(millis()-times));
+
+	Serial2.println(" delay " +String(millis()-times));
 
 
 
