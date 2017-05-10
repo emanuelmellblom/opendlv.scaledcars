@@ -113,7 +113,6 @@ void setup() {
 
 int readI2C(int address) {
   //Serial.println(String(Wire.requestFrom(address,1)));
-  Serial.println("helllo");
   Wire.requestFrom(address, 1);
   char x = (char)0;
   while (Wire.available()) {
@@ -144,24 +143,20 @@ char SensorData[6] = {'0', '0', '0', '0', '0','0'};
 
 void loop() {		
 
-		//
-	  	
-		unsigned long times = millis();
-		//
-		//Serial.println(String(digitalRead(odometer)));
-		
+unsigned long times = millis();
+	
 		int n=0;
-	 	n=readSensor(25,frontRightIrSensor);
+	 	n=readSensor(50,frontRightIrSensor);
 	 	char distanceFrontRightIr = (n < 20 ? (n) : 0) / 2 & 31; //Calculate the distance in centimeters and store the value in a variable
 	 	distanceFrontRightIr |=	5 << 5;
 	 	SensorData[5] = distanceFrontRightIr;
 	
-		n=readSensor(25,backRightIrSensor);
+		n=readSensor(50,backRightIrSensor);
 	 	char distanceBackRightIr = ( 20 > n ? (n) : 0) / 2 & 31;
 	 	distanceBackRightIr |=	1 << 5;
 	 	SensorData[1] = distanceBackRightIr;
 	
-		n=readSensor(25,backIrSensor);
+		n=readSensor(50,backIrSensor);
 	 	char distanceBackIr = ((n < 20 ? ( n) : 0) / 2 & 31) | (4 << 5);
 	 	//distanceBackIr|=(4 << 5);
 	 	//distanceBackRightIr |=	(4 << 5);
@@ -172,14 +167,10 @@ void loop() {
  	if (ping) {
 	    Wire.beginTransmission(I2C[sensorId]);
 	    Wire.write(0x02);
-	    Wire.write(10);
+	    Wire.write(14);
 	    Wire.endTransmission(1);
 	    //delay(20);
-	    Wire.beginTransmission(I2C[sensorId]);
-	    Wire.write(0x00);Wire.beginTransmission(I2C[sensorId]);
-	    Wire.write(0x02);
-	    Wire.write(10);
-	    Wire.endTransmission(1);
+	   
 	    //delay(20);
 	    Wire.beginTransmission(I2C[sensorId]);
 	    Wire.write(0x00);
@@ -198,17 +189,25 @@ void loop() {
     Wire.beginTransmission(I2C[sensorId]);
     Wire.write(0x03);
     Wire.endTransmission(1);
-    for (int i = 0; i < 1; i++) {
       char v = readI2C(I2C[sensorId]);
-      SensorData[2 + sensorId] = ((v < 30 && v != 0 ? v : 0) / 2 & 31)| ((2+sensorId)<<5);
-    }
+       /*if(sensorId==0){
+       	Serial2.println(" delay "+String(millis()-times));
+     	 times=millis();
+      }*/
+      SensorData[2 + sensorId] = ((v <= 50 && v != 0 ? v : 0) / 2 & 31)| ((2+sensorId)<<5);
+     
+      /*if(sensorId==0)
+      {Serial.println((int)( SensorData[2 + sensorId]&31)*2);
+      times=millis();
+      }*/
     ping = true;
-    sensorId = (sensorId + 1) % 2;
+    sensorId = 0;//(sensorId + 1) % 2;
   }
 
   for (int i = 1; i < sizeof(SensorData); i++) {
+	
 	Serial.println(SensorData[i]);
-    //Serial.println(String((SensorData[5]&31)*2)+" id "+String((SensorData[5]>>5)&7));
+   // Serial.println(String((SensorData[5]&31)*2)+" id "+String((SensorData[5]>>5)&7));
   }
 
 
@@ -219,14 +218,12 @@ void loop() {
   unsigned int speedCH = pulseIn(speedPin, HIGH);
   //esc.write(speedCH);
 
-  //Serial.println(String(speedCH));
-  // Serial2.println("hellow world");
-
   //reRead:
   if (Serial.available()) {
     char k = Serial.read();
     byteDecode(k, &speeds, &value);
-    Serial.println(k);
+    Serial2.println("angle is"+String(value));
+   // Serial.println(k);
     car->setAngle(value + 120);
     
   } else {
@@ -245,10 +242,10 @@ void loop() {
   }
 
 
-	Serial2.println(" delay " +String(millis()-times));
+	
 
 
-
+	   Serial2.println(" delay is"+String(millis()-times));
 
 
 }
