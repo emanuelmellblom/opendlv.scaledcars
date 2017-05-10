@@ -208,7 +208,7 @@ int32_t distance = 180; //280
             cerr << "steeringAngle = " << steeringAngleDegrees << endl;
             //char output = 0x00;
             char output = ((int)(round(steeringAngleDegrees/4))+15)& 31;
-            //char output = ((40/4)+15)& 31;
+            //char output = ((29/4)+15)& 31;
             cerr << "Output steering = " << (int)output << endl;
 
 
@@ -636,7 +636,7 @@ int32_t distance = 180; //280
                 //Check for object Simulator
                 //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
 
-                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 45 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 50 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
                     cerr << "### Object detected ###" << endl;
                     //double ulValue = readSensorData(ULTRASONIC_FRONT_CENTER);
                     //cerr << "received " << ulValue << " on ULTRASONIC_FRONT_CENTER" << endl;
@@ -775,7 +775,7 @@ int32_t distance = 180; //280
                             //     getConference().send(cont1);
                             // }else{
                                 sendSteeringAngle((45*M_PI)/180); //45
-                                //odcore::base::Thread::usleepFor(200000);
+                                odcore::base::Thread::usleepFor(100000);
                                 //sendSteeringAngle(0);
                            // }
 
