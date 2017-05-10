@@ -43,38 +43,36 @@
 #include <opendavinci/odcore/wrapper/SharedMemoryFactory.h>
 
 #include "odvdscaledcarsdatamodel/generated/chalmersrevere/scaledcars/ExampleMessage.h"
+
+#include "opendavinci/odcore/base/KeyValueConfiguration.h"
+#include "opendavinci/odcore/data/TimeStamp.h"
 //----
 
-
-
-//namespace automotive {
-    //namespace miniature {
 namespace scaledcars{
-
 
     using namespace std;
     using namespace odcore::base;
     using namespace odcore::data;
+    using namespace odcore;
+    using namespace odcore::wrapper;
     using namespace automotive;
     using namespace automotive::miniature;
 
 //NEW FROM LANEFOLLOWER
 using namespace odcore::data::image;
 double steering;
-int32_t distance = 90; //280
+int32_t distance = 110; //280
 //------
 
 
         //NEW FROM LANEFOLLOWING
-
-
 
         Overtaker::Overtaker(const int32_t &argc, char **argv) : TimeTriggeredConferenceClientModule(argc, argv, "Overtaker"), 
             m_hasAttachedToSharedImageMemory(false),
             m_sharedImageMemory(),
             m_image(NULL),
             m_debug(true), //Have true to show detected lane markings, debugging prints and debugging camera windows
-            m_simulator(true), //Set m_simulator to true if simulator is used and false otherwise.
+            m_simulator(false), //Set m_simulator to true if simulator is used and false otherwise.
             m_font(),
             m_previousTime(),
             m_eSum(0),
@@ -86,12 +84,14 @@ int32_t distance = 90; //280
 
         void Overtaker::setUp() {
             // This method will be call automatically _before_ running body().
-            cerr << "setting up" << endl;
+            //cerr << "setting up" << endl;
         }
 
         void Overtaker::tearDown() {
             // This method will be call automatically _after_ return from body().
         }
+
+
 
         bool Overtaker::readSharedImage(Container &c) {
             bool retVal = false;
@@ -141,6 +141,90 @@ int32_t distance = 90; //280
             return retVal;
         }
 
+        int Overtaker::readSensorData(int sensorId){
+            const string NAME = "sensorMemory";
+            int returnValue;
+
+            // We are using OpenDaVINCI's std::shared_ptr to automatically release any acquired resources.
+            try {
+                std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
+
+                if (sharedMemory->isValid()) {
+                    // if(sharedMemory!=NULL){
+                    //     char reset = 0x00;
+                    //     odcore::base::Lock l(sharedMemory);
+                    //     char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+                       
+                       
+                    // }
+
+                    uint32_t counter = 30;
+                    while (counter-- > 0) {
+                        int id;
+                        char value;
+                    {
+                        // Using a scoped lock to lock and automatically unlock a shared memory segment.
+                        odcore::base::Lock l(sharedMemory);
+                        char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+                        
+                        //Extract the sensor ID from the received byte
+                        id = p[sensorId] >> 5 & 0x07;
+                        //Extract the sensor value from the received byte
+                        value = (p[sensorId] & 31)*2;
+                        
+                        if(id == sensorId){
+                            //p[sensorId] = 0x00;
+                            for(int i = 1; i < 8; i++){
+                                p[i] = 0x00;
+                            }
+                            returnValue = value & 255;
+                            break;
+                        }
+                    }
+                        // Sleep some time.
+                        //const uint32_t ONE_SECOND = 1000 * 1000;
+                        odcore::base::Thread::usleepFor(1000);
+                    }
+                }
+            }
+            catch(string &exception) {
+                cerr << "Sensor memory could not created: " << exception << endl;
+            }
+            return returnValue;
+        }
+
+        void Overtaker::sendSteeringAngle(double steeringAngle){
+
+            //cerr << "org = " << steeringAngle << endl;
+            double steeringAngleDegrees = ((steeringAngle*180)/M_PI);
+            cerr << "steeringAngle = " << steeringAngleDegrees << endl;
+            char output = 0x00;
+            output = (((int)(steeringAngleDegrees)/4)+15)& 31;
+
+            
+
+            const string NAME = "sensorMemory";
+            try{
+                std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
+                if (sharedMemory->isValid()) {
+                    // if(sharedMemory!=NULL){
+                    //     char reset = 0x00;
+                    //     odcore::base::Lock l(sharedMemory);
+                    //     char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+                    //     p[0] = reset;
+                    // }
+                    //cerr << "Writing (Angle) shared memory is valid" << endl;
+                    {
+                    odcore::base::Lock l(sharedMemory);
+                    char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+                    p[0] = output;
+                    }
+                }
+            }
+            catch(string &exception){
+                cerr << "sharedMemory not Attached " << exception << endl;
+            }
+        }
 
         void Overtaker::processImage() {
 
@@ -148,15 +232,6 @@ int32_t distance = 90; //280
             double e = 0;
 
             int32_t CONTROL_SCANLINE = 262;// 462, (372), 252 
-            
-            // if(m_simulator){
-            //     CONTROL_SCANLINE = 462;
-            // }else{
-            //     CONTROL_SCANLINE = 222;
-            // }
-
-            //const int32_t CONTROL_SCANLINE = 462; // calibrated length to right: 280px
-            //const int32_t distance = 150; //280
 
             cv::Mat grey_image;
             if(m_image!=NULL){
@@ -177,20 +252,6 @@ int32_t distance = 90; //280
 
                 //Apply Canny edge detection 
                 Canny(grey_image, grey_image, 50, 200, 3);
-
-                //cerr << "Image Converted" << endl;
-
-                //TEST Contours
-                // vector<vector<cv::Point>> contours;
-                // vector<Vec4i> hierarchy;
-                // cv::findContours(grey_image, grey_image, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_NONE, cvPoint(0,0));
-                // //for (unsigned int i = 0; i < contours.size(); i++){
-                // for (unsigned int i = 0; i < sizeof(contours); i++){
-                //     if(hierarchy[i][3] >= 0){
-                //         cv::drawContours(grey_image, grey_image, i, cv::Scalar(2,55,0,0),1,8);
-                //     }
-                // }
-
 
                 // vector<vector<cv::Point> > contours;
                 // vector<cv::Vec4i> hierarchy;
@@ -232,9 +293,6 @@ int32_t distance = 90; //280
             int missingLeftLane = 0;
             //int lastLeftDistance = 0;
 
-            //cerr << lastRightDistance << endl;
-
-
             //Lane detecting algorithm
             list<CvPoint> unsorted;
             list<CvPoint> unsortedLeft;
@@ -272,13 +330,7 @@ int32_t distance = 90; //280
                 //TEST VOTING Find correct poits detected ---------------------------------------
                 //Right Lane
                 if (right.x > 0) {
-                    //cerr << "In the storing if--------------------" << endl;
                     rightLaneCount++;
-                    //lastRightDistance = right.x;
-                    //int point[2] = {right.x, y};
-                    //CvPoint* point;
-                    //point->x = right.x;
-                    //point->y = y;
                     unsorted.push_front(right);
                 } else {
                     missingRightLane++;
@@ -287,7 +339,6 @@ int32_t distance = 90; //280
                 //Left Lane
                 if (left.x > 0) {
                     leftLaneCount++;
-                    //lastLeftDistance = left.x;
                     unsortedLeft.push_front(left);
                 } else {
                     missingLeftLane++;
@@ -296,27 +347,15 @@ int32_t distance = 90; //280
 
                 if (m_debug) {
                     if (left.x > 0) {
-                        //CvScalar green = CV_RGB(0, 255, 0);
-                        //cvLine(temp, cvPoint(temp->width/2, y), left, green, 1, 8);
-
                         stringstream sstr;
                         sstr << (temp->width / 2 - left.x);
-                        //cvPutText(temp, sstr.str().c_str(), cvPoint(temp->width/2 - 100, y - 2), &m_font, green);
-                        //imgProc.line(temp,(temp->width/2 - 100), y-2, new cv::Scalar(0,255,0),3);
-
                         cv::line(grey_image, cv::Point2i(temp->width / 2, y), left, cv::Scalar(255, 0, 0), 1, 8);
 
 
                     }
                     if (right.x > 0) {
-                        //cerr << "right" << endl;
-                        //CvScalar red = CV_RGB(255, 0, 0);
-                        //cvLine(temp, cvPoint(temp->width/2, y), right, red, 1, 8);
-
                         stringstream sstr;
                         sstr << (right.x - temp->width / 2);
-                        //cvPutText(temp, sstr.str().c_str(), cvPoint(temp->width/2 + 100, y - 2), &m_font, red);
-
                         cv::line(grey_image, cv::Point2i(temp->width / 2, y), right, cv::Scalar(255, 0, 0), 1, 8);
                     }
                 }
@@ -362,29 +401,17 @@ int32_t distance = 90; //280
                         list <CvPoint> *listPointer = &sorted.front();
 
                         while (unsorted.size() != 0) {
-                            //cerr << "First = " << (h.x+t.x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x << endl;
-                            //CvScalar pix = cvGet2D(temp, (h[0]+t[0])/2, (h[1]+t[1])/2);
                             CvScalar pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
-                            //cerr << "beforeif" << endl;
                             if (pix.val[0] >= 200) {
-                                //cerr << "########Finds a white pixel in first if########" << endl;
-                                //cerr << "in if" << endl;
                                 listPointer->push_back(t);
                             } else {
-                                //cerr << "##does not see a white##" << endl;
-                                //cerr << "in else" << endl;
-                                //listPointer->push_back(t);
                                 unsigned int i;
                                 for (i = 0; i < sorted.size(); i++) {
-                                    //cerr << "First2 = " << (h->x+t->x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x;
                                     pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
                                     if (pix.val[0] >= 200) {
-                                        //cerr << "########Finds a white pixel in for loop ########" << endl;
-
                                         listPointer->push_back(t);
                                         break;
                                     } else {
-                                        //list<int*> tempList = sorted.front();
                                         list <CvPoint> tempList = sorted.front();
                                         sorted.pop_front();
                                         listPointer = &sorted.front();
@@ -401,27 +428,16 @@ int32_t distance = 90; //280
                             h = t;
                             t = unsorted.front();
                             if (unsorted.size() != 0)unsorted.pop_front();
-                            //else t = 0;
                         }
-                        //cerr << "out of first while" << endl;
-                        //list<int*> l = sorted.front();
                         list <CvPoint> l = sorted.front();
-                        //cerr << "in between " << endl;
                         sorted.pop_front();
                         while (sorted.size() != 0) {
-                            //cerr << "in second while" << endl;
                             if (sorted.front().size() > l.size()) {
                                 l = sorted.front();
                             }
                             sorted.pop_front();
                         }
-                        //cerr << "out of second while" << endl;
-
                         e = ((l.front().x - temp->width / 2.0) - distance) / distance;
-                        // else{
-                        //     e = (distance - (temp->width/2.0 - left.x))/distance;
-                        // }
-
                         /*
                          * LEFT LANE
                          */
@@ -437,29 +453,17 @@ int32_t distance = 90; //280
                         list <CvPoint> *listPointer = &sorted.front();
 
                         while (unsortedLeft.size() != 0) {
-                            //cerr << "First = " << (h.x+t.x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x << endl;
-                            //CvScalar pix = cvGet2D(temp, (h[0]+t[0])/2, (h[1]+t[1])/2);
                             CvScalar pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
-                            //cerr << "beforeif" << endl;
                             if (pix.val[0] >= 200) {
-                                //cerr << "########Finds a white pixel in first if########" << endl;
-                                //cerr << "in if" << endl;
                                 listPointer->push_back(t);
                             } else {
-                                //cerr << "##does not see a white##" << endl;
-                                //cerr << "in else" << endl;
-                                //listPointer->push_back(t);
                                 unsigned int i;
                                 for (i = 0; i < sorted.size(); i++) {
-                                    //cerr << "First2 = " << (h->x+t->x)/2 << " Second = " << (h->y+t->y)/2 << " h0 = " << h->y << " t0 = " << t->y << " h1 = " << h->x << " t1 = " << t->x;
                                     pix = cvGet2D(temp, (h.y + t.y) / 2, (h.x + t.x) / 2);
                                     if (pix.val[0] >= 200) {
-                                        //cerr << "########Finds a white pixel in for loop ########" << endl;
-
                                         listPointer->push_back(t);
                                         break;
                                     } else {
-                                        //list<int*> tempList = sorted.front();
                                         list <CvPoint> tempList = sorted.front();
                                         sorted.pop_front();
                                         listPointer = &sorted.front();
@@ -476,27 +480,16 @@ int32_t distance = 90; //280
                             h = t;
                             t = unsortedLeft.front();
                             if (unsortedLeft.size() != 0)unsortedLeft.pop_front();
-                            //else t = 0;
                         }
-                        //cerr << "out of first while" << endl;
-                        //list<int*> l = sorted.front();
                         list <CvPoint> l = sorted.front();
-                        //cerr << "in between " << endl;
                         sorted.pop_front();
                         while (sorted.size() != 0) {
-                            //cerr << "in second while" << endl;
                             if (sorted.front().size() > l.size()) {
                                 l = sorted.front();
                             }
                             sorted.pop_front();
                         }
-                        //cerr << "out of second while" << endl;
-
-                        //e = ((l.front().x - temp->width/2.0) - distance)/distance;
                         e = (distance - (temp->width / 2.0 - l.front().x)) / distance;
-                        // else{
-                        //     e = (distance - (temp->width/2.0 - left.x))/distance;
-                        // }
                     }
 
                 }
@@ -517,14 +510,9 @@ int32_t distance = 90; //280
                 }
             }
 
-            
-
-
             TimeStamp currentTime;
             double timeStep = (currentTime.toMicroseconds() - m_previousTime.toMicroseconds()) / (1000.0 * 1000.0);
             m_previousTime = currentTime;
-
-
 
             if (fabs(e) < 1e-2) {
                 m_eSum = 0;
@@ -538,17 +526,11 @@ int32_t distance = 90; //280
             const double Ki = 3.103197570937628;
             const double Kd = 0.030450210485408566;
 
-            //const double Kp = 1.0;
-            //const double Ki = 0.01;
-            //const double Kd = 0.1;
-
-             //cerr << "e = " << e << endl;
             const double p = Kp * e;
             const double i = Ki * timeStep * e;// * m_eSum; // * e
             const double d = Kd * (e - m_eOld)/timeStep;
             m_eOld = e;
 
-            //const double y = p + i + d;
             const double y = p + i + d;
 
             double desiredSteering = 0;
@@ -574,63 +556,49 @@ int32_t distance = 90; //280
             //m_vehicleControl.setSpeed(2);
             //m_vehicleControl.setSteeringWheelAngle(desiredSteering);
             steering = desiredSteering;
+            //cerr << "Original steering value = " << steering << endl;
         }
 
 
         // This method will do the main data processing job.
         odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode Overtaker::body() {
-             const int32_t ULTRASONIC_FRONT_CENTER = 3;
-             //const int32_t ULTRASONIC_FRONT_RIGHT = 4;
-             const int32_t INFRARED_FRONT_RIGHT = 0;
-             const int32_t INFRARED_REAR_RIGHT = 2;
-             //const int32_t ULTRASONIC_REAR_RIGHT = 5;
-
-            // const double OVERTAKING_DISTANCE = 5.5;
-            // const double HEADING_PARALLEL = 0.04; //0.04
             
-            // Overall state machines for moving and measuring.
-            //enum StateMachineMoving { FORWARD, TO_LEFT_LANE_LEFT_TURN, TO_LEFT_LANE_RIGHT_TURN, CONTINUE_ON_LEFT_LANE, TO_RIGHT_LANE_RIGHT_TURN, TO_RIGHT_LANE_LEFT_TURN };
-            //enum StateMachineMeasuring { DISABLE, FIND_OBJECT_INIT, FIND_OBJECT, FIND_OBJECT_PLAUSIBLE, HAVE_BOTH_IR, HAVE_BOTH_IR_SAME_DISTANCE, END_OF_OBJECT };
+            //-const int32_t ULTRASONIC_FRONT_CENTER = 3;
+            //const int32_t ULTRASONIC_FRONT_RIGHT = 4;
+            //-const int32_t INFRARED_FRONT_RIGHT = 0;
+            //-const int32_t INFRARED_REAR_RIGHT = 2;
 
-            //StateMachineMoving stageMoving = FORWARD;
-            //StateMachineMeasuring stageMeasuring = FIND_OBJECT_INIT;
+             //Sensor Id's Real Car
+            int INFRARED_FRONT_RIGHT = 5;
+            int INFRARED_REAR_RIGHT = 1;
+            int ULTRASONIC_FRONT_CENTER = 2; //2
+            //int ULTRASONIC_FRONT_RIGHT = 3;
+            //int INFRARED_BACK = 4;
 
-            // State counter for dynamically moving back to right lane.
-            //int32_t stageToRightLaneRightTurn = 0;
-            //int32_t stageToRightLaneLeftTurn = 0;
-
-            // Distance variables to ensure we are overtaking only stationary or slowly driving obstacles.
-            //double distanceToObstacle = 0;
-            //double distanceToObstacleOld = 0;
 
             bool turnToLeftLane = false;
             bool turnToRightLane = false;
             bool goForward = true;
             bool driveOnLeftLane = false;
-            bool onRightLaneTurnLeft = false;
+            //bool onRightLaneTurnLeft = false;
             int count=0;
-            //int counting =0;
 
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
-                //cerr << "Running" << endl;
 
                 bool has_next_frame = false;
-                  //cerr << "In body" << endl;
 
                 // Get the most recent available container for a SharedImage.
                 Container c = getKeyValueDataStore().get(odcore::data::image::SharedImage::ID());
                 
-                 m_vehicleControl.setSpeed(2); //1
+                if(m_simulator){
+                    m_vehicleControl.setSpeed(2); //1
+                }
                 if (c.getDataType() == odcore::data::image::SharedImage::ID()) {
-                    //cerr << "is shared image" << endl;
-                    // Example for processing the received container.
                     has_next_frame = readSharedImage(c);
-                    //cerr << "read frame" << endl;
                 }
 
                 // Process the read image and calculate regular lane following set values for control algorithm.
                 if (true == has_next_frame) {
-                    //cerr << "has next frame" << endl;
                     processImage();
                 }
 
@@ -647,13 +615,22 @@ int32_t distance = 90; //280
 
 
                 /*
-                * TESTING STUFF
+                 * Main overtaking Algorithm
                 */
-                if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
-                    //goForward = false;
+
+                //Check for object Simulator
+                //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 35 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
                     cerr << "Object detected" << endl;
-                    vc.setSpeed(1);
-                    vc.setSteeringWheelAngle(-60); //-45
+                    //double ulValue = readSensorData(ULTRASONIC_FRONT_CENTER);
+                    //cerr << "received " << ulValue << " on ULTRASONIC_FRONT_CENTER" << endl;
+                    
+                    if(m_simulator){
+                        vc.setSpeed(1);
+                        vc.setSteeringWheelAngle((-60*M_PI)/180); //-60 
+                    }else{
+                        sendSteeringAngle((-60*M_PI)/180);  //-60
+                    }
 
                     turnToLeftLane = true;
                     //driveOnLeftLane = true;
@@ -664,42 +641,47 @@ int32_t distance = 90; //280
 
                 else if(turnToLeftLane){  
                     cerr << "turn to the left lane" << endl;
-                    //vc.setSpeed(1);
-                    //vc.setSteeringWheelAngle(-45); //-45
 
+                    if(m_simulator){
+                        vc.setSpeed(1);
+                        vc.setSteeringWheelAngle((-50*M_PI)/180); //-50
+                        Container cont(vc);
+                        // Send container.
+                        getConference().send(cont);
+                        odcore::base::Thread::usleepFor(100000);
+                        vc.setSpeed(1);
+                        vc.setSteeringWheelAngle(0);
+                        Container cont1(vc);
+                        // Send container.
+                        getConference().send(cont1);
+                    }else{
+                        sendSteeringAngle((-50*M_PI)/180); //-50
+                        odcore::base::Thread::usleepFor(100000);
+                        sendSteeringAngle(0);
+                    }
 
-                    vc.setSpeed(1);
-                    vc.setSteeringWheelAngle(-50);
-                    Container cont(vc);
-                    // Send container.
-                    getConference().send(cont);
-                    odcore::base::Thread::usleepFor(100000);
-                    vc.setSpeed(1);
-                    vc.setSteeringWheelAngle(0);
-                    Container cont1(vc);
-                    // Send container.
-                    getConference().send(cont1);
-
-                    double di = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
-                    cerr << "IR front right = " << di << endl;
+                    //double di = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
+                    //cerr << "IR front right = " << di << endl;
                     
-                    //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_RIGHT) < 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT)>1){
-                    if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 2.60){
+                    //if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 2.60){
+                    int irValue = readSensorData(INFRARED_FRONT_RIGHT);
+                    cerr << "received " << irValue << " on INFRARED_FRONT_RIGHT" << endl;
 
+                    if(readSensorData(INFRARED_FRONT_RIGHT) > 0){ //&& readSensorData(INFRARED_FRONT_RIGHT) < 8
+                        cerr << "Infrared front detected object" << endl;
                         driveOnLeftLane = true;
                         turnToLeftLane = false;
                     }
-              
-                    
                 }
 
                 if(driveOnLeftLane){
+
+
                    
-                    distance = 280;
+                    //distance = 280;
                     cerr << "driving on the left lane" << endl;
-                    while((sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 || sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
-                    //while(((sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) < 0) || (sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0)) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
-                    //while(sbd.getValueForKey_MapOfDistances(ULTRASONIC_REAR_RIGHT) < 0 && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
+                    //while((sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 || sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
+                    while((readSensorData(INFRARED_FRONT_RIGHT) > 0 || readSensorData(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
 
                         double sensorF = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
                         double sensorB = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
@@ -712,23 +694,27 @@ int32_t distance = 90; //280
                             has_next_frame = readSharedImage(c);
                         }
                         if (true == has_next_frame){
-                            //cerr << "has next frame" << endl;
                             processImage();
                         }
 
                         // Process the read image and calculate regular lane following set values for control algorithm.
                         if (true == has_next_frame) {
-                            //cerr << "has next frame" << endl;
                             processImage();
                         }
                         cerr << "Go forward in while" << endl;
-                        vc.setSpeed(1);
-                        vc.setSteeringWheelAngle(steering);
-                        Container com(vc);
-                        // Send container.
-                        getConference().send(com);
 
-                        if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT)<0){
+                        if(m_simulator){
+                            vc.setSpeed(1);
+                            vc.setSteeringWheelAngle(steering);
+                            Container com(vc);
+                            // Send container.
+                            getConference().send(com);
+                        }else{
+                            sendSteeringAngle(steering);
+                        }
+
+                        //if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT)<0){
+                        if(readSensorData(INFRARED_FRONT_RIGHT)<=0){
                             cerr << "breakin out of while" << endl;
                             break;
                         }
@@ -744,7 +730,7 @@ int32_t distance = 90; //280
 
                 else if(turnToRightLane){
                     
-                    distance = 90;
+                    distance = 110;
 
                     cerr << "Turn back to right lane" << endl;
                     double inf3 = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
@@ -753,235 +739,73 @@ int32_t distance = 90; //280
                     cerr << "Infrared front right = " <<  inf4 << endl;
 
                     //double v = sbd.getValueForKey_MapOfDistances(ULTRASONIC_REAR_RIGHT)
-              
-                   //if(count<=46 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_REAR_RIGHT) < 0 && sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0){                 
-                        if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
+                             
+                        //if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
+                        if(readSensorData(INFRARED_REAR_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) == 0){
                             count++;
                             double inf = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
                             cerr << "Infrared rear right = " <<  inf << endl;
                             double inf2 = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
                             cerr << "Infrared front right = " <<  inf2 << endl;
-                            vc.setSpeed(1);
-                            vc.setSteeringWheelAngle(45);
-                            Container cont(vc);
-                            // Send container.
-                            getConference().send(cont);
-                            odcore::base::Thread::usleepFor(200000);
-                            vc.setSpeed(1);
-                            vc.setSteeringWheelAngle(0);
-                            Container cont1(vc);
-                            // Send container.
-                            getConference().send(cont1);
+                            
+                            if(m_simulator){
+                                vc.setSpeed(1);
+                                vc.setSteeringWheelAngle((45*M_PI)/180); //45
+                                Container cont(vc);
+                                // Send container.
+                                getConference().send(cont);
+                                odcore::base::Thread::usleepFor(200000);
+                                vc.setSpeed(1);
+                                vc.setSteeringWheelAngle(0);
+                                Container cont1(vc);
+                                // Send container.
+                                getConference().send(cont1);
+                            }else{
+                                sendSteeringAngle((45*M_PI)/180); //45
+                                odcore::base::Thread::usleepFor(200000);
+                                sendSteeringAngle(0);
+                            }
 
                         }else{
-                            vc.setSpeed(1);
-                            vc.setSteeringWheelAngle(-45);
-                            Container cont2(vc);
-                            // Send container.
-                            getConference().send(cont2);
-                            odcore::base::Thread::usleepFor(90000);
+                            if(m_simulator){
+                                vc.setSpeed(1);
+                                vc.setSteeringWheelAngle((-45*M_PI)/180); //-45
+                                Container cont2(vc);
+                                // Send container.
+                                getConference().send(cont2);
+                                odcore::base::Thread::usleepFor(90000);
+                            }else{
+                                sendSteeringAngle((-45*M_PI)/180); //-45
+                                odcore::base::Thread::usleepFor(90000);
+                            }
+
                             turnToRightLane = false;
-                            //goForward = true;
-                            onRightLaneTurnLeft = true;
+                            goForward = true;
+                            //onRightLaneTurnLeft = true;
                             count = 0;
                         }
                 }
-
-                //NEW TEST
-                else if(onRightLaneTurnLeft){
-                    // if((counting <= 95 && (sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0 && sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) < 0))){
-                    //     counting++;
-                    //     vc.setSpeed(0.5);
-                    //     vc.setSteeringWheelAngle(-65);
-                    //     cerr << "####### TURNING #########" << endl;
-                        
-                    // }else{
-                    //     onRightLaneTurnLeft = false;
-                    //     goForward = true;
-                    //     counting = 0;
-                    // }
-                    onRightLaneTurnLeft = false;
-                    goForward = true;
-                }
-
 
                 else if(goForward){
                      //turnToRightLane = false;
                     //goForward = false;
                     cerr << "Go forward again -------- hello" << endl;
-                    vc.setSpeed(1);
-                    vc.setSteeringWheelAngle(steering);
+
+                    if(m_simulator){
+                        vc.setSpeed(1);
+                        vc.setSteeringWheelAngle(steering);
+                    }else{
+                        //cerr << "styr" << steering <<endl; 
+                        sendSteeringAngle(steering);
+
+                    }
                 }
-
-                Container control(vc);
-                //Send container.
-                getConference().send(control);
-
-
-
-                // /*
-                // * END OF TESTING STUFF
-                // */
-
-                    
-
-                // Moving state machine.
-                // if (stageMoving == FORWARD) {
-                //     // Go forward.
-                //     cerr << "Move Forward" << endl;
-                //     vc.setSpeed(1);
-                //     vc.setSteeringWheelAngle(steering);
-
-                //     stageToRightLaneLeftTurn = 0;
-                //     stageToRightLaneRightTurn = 0;
-                // }
-                // else if (stageMoving == TO_LEFT_LANE_LEFT_TURN) {
-                //     // Move to the left lane: Turn left part until both IRs see something.
-                //     cerr << "Move Left 1st step (left lane)" << endl;
-                //     vc.setSpeed(1);
-                //     vc.setSteeringWheelAngle(-25); //25
-
-                //     // State machine measuring: Both IRs need to see something before leaving this moving state.
-                //     stageMeasuring = HAVE_BOTH_IR;
-
-                //     stageToRightLaneRightTurn++;
-                // }
-                // else if (stageMoving == TO_LEFT_LANE_RIGHT_TURN) {
-                //     // Move to the left lane: Turn right part until both IRs have the same distance to obstacle.
-                //     cerr << "Make right turn on the left lane" << endl;
-                //     vc.setSpeed(1);
-                //     vc.setSteeringWheelAngle(25);
-
-                //     // State machine measuring: Both IRs need to have the same distance before leaving this moving state.
-                //     stageMeasuring = HAVE_BOTH_IR_SAME_DISTANCE;
-
-                //     stageToRightLaneLeftTurn++;
-                // }
-                // else if (stageMoving == CONTINUE_ON_LEFT_LANE) {
-                //     // Move to the left lane: Passing stage.
-                //     cerr << "Moves on left lane" << endl;
-                //     vc.setSpeed(1);
-                //     //vc.setSteeringWheelAngle(0);
-                //     vc.setSteeringWheelAngle(25); //steering
-                //     cerr << "Steering = " << steering << endl;
-
-                //     // Find end of object.
-                //     stageMeasuring = END_OF_OBJECT;
-                //     //stageMoving = FORWARD;
-                // }
-                // /*
-                //  * Probematic part
-                // */
-
-                // else if (stageMoving == TO_RIGHT_LANE_RIGHT_TURN) {
-                //     cerr << "Move to right lane" << endl;
-                //     vc.setSteeringWheelAngle(25); //-25
-                //     vc.setSpeed(.5);
-                //     stageToRightLaneRightTurn--;
-                //     stageMoving = TO_RIGHT_LANE_LEFT_TURN;
-                // }
-
-                // else if (stageMoving == TO_RIGHT_LANE_LEFT_TURN) {
-                //     cerr << "Turn left on the Right lane" << endl;
-                //     vc.setSteeringWheelAngle(-65);
-                //     vc.setSpeed(.5);
-                //     distanceToObstacle = 0;
-                //     distanceToObstacleOld = 0;
-                //     stageToRightLaneLeftTurn--;
-                //     if (stageToRightLaneLeftTurn == 0) {
-                //         // Start over.
-                //         stageMoving = FORWARD;
-                //         stageMeasuring = FIND_OBJECT_INIT;
-
-                //         distanceToObstacle = 0;
-                //         distanceToObstacleOld = 0;
-                //      }
-
-                // }
-                /*
-                *  END PROBLEMATIC PART
-                */
-
-                // Measuring state machine.
-            //     if (stageMeasuring == FIND_OBJECT_INIT) {
-            //         cerr << "Init object detect" << endl;
-            //         distanceToObstacleOld = sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER);
-            //         stageMeasuring = FIND_OBJECT;
-            //     }
-            //     else if (stageMeasuring == FIND_OBJECT) {
-            //         cerr << "Object found" << endl;
-            //         distanceToObstacle = sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER);
-
-            //         // Approaching an obstacle (stationary or driving slower than us).
-            //         if ( (distanceToObstacle > 0) && (((distanceToObstacleOld - distanceToObstacle) > 0) || (fabs(distanceToObstacleOld - distanceToObstacle) < 1e-2)) ) {
-            //             // Check if overtaking shall be started.
-            //             cerr << "object plausible" << endl;
-            //             stageMeasuring = FIND_OBJECT_PLAUSIBLE;
-            //         }
-
-            //         distanceToObstacleOld = distanceToObstacle;
-            //     }
-            //     else if (stageMeasuring == FIND_OBJECT_PLAUSIBLE) {
-            //         if (sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < OVERTAKING_DISTANCE) {
-            //             stageMoving = TO_LEFT_LANE_LEFT_TURN;
-            //             cerr << "Start overtaking" << endl;
-
-            //             // Disable measuring until requested from moving state machine again.
-            //             stageMeasuring = DISABLE;
-            //         }
-            //         else {
-            //             stageMeasuring = FIND_OBJECT;
-            //         }
-            //     }
-            //     else if (stageMeasuring == HAVE_BOTH_IR) {
-            //         cerr << "Both ir detects" << endl;
-            //         // Remain in this stage until both IRs see something.
-            //         if ( (sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0) && (sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0) ) {
-            //             // Turn to right.
-            //             stageMoving = TO_LEFT_LANE_RIGHT_TURN;
-            //         }
-            //     }
-            //     else if (stageMeasuring == HAVE_BOTH_IR_SAME_DISTANCE) {
-            //         cerr << "Both ir same distance" << endl;
-            //         // Remain in this stage until both IRs have the similar distance to obstacle (i.e. turn car)
-            //         // and the driven parts of the turn are plausible.
-            //         const double IR_FR = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
-            //         const double IR_RR = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
-
-            //         cerr << "Ir front = " << IR_FR << endl;
-            //         cerr << "Ir Back = " << IR_RR << endl;
-            //         cerr << "SUM = " << IR_FR - IR_RR << endl;
-                      
-            //         // if(IR_FR < 0 || IR_RR < 0){
-            //         //     stageMeasuring = END_OF_OBJECT;  
-            //         // }
-            //         if ((fabs(IR_FR - IR_RR) < HEADING_PARALLEL) && (stageToRightLaneLeftTurn - stageToRightLaneRightTurn) > 0){
-            //             // Straight forward again.
-            //             cerr << "In the if --------------------" << endl;
-            //             stageMoving = CONTINUE_ON_LEFT_LANE;
-            //             //stageMoving = TO_RIGHT_LANE_RIGHT_TURN;
-
-            //         } 
-            //     }
-            //     else if (stageMeasuring == END_OF_OBJECT) {
-            //         // Find end of object.
-            //         cerr << "End of the object" << endl;
-            //         distanceToObstacle = sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_RIGHT);
-            //         //distanceToObstacle = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
-            //         if (distanceToObstacle < 0) {
-            //             // Move to right lane again.
-            //             stageMoving = TO_RIGHT_LANE_RIGHT_TURN;
-            //             stageMoving = TO_RIGHT_LANE_RIGHT_TURN;
-
-            //             // Disable measuring until requested from moving state machine again.
-            //             stageMeasuring = DISABLE;
-            //         }
-            //     }
-
-            //     // Create container for finally sending the data.
-            //     Container control(vc);
-            //     // Send container.
-            //     getConference().send(control);
+                
+                if(m_simulator){
+                    Container control(vc);
+                    //Send container.
+                    getConference().send(control);
+                }
              }
 
             return odcore::data::dmcp::ModuleExitCodeMessage::OKAY;

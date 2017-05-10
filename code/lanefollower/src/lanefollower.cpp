@@ -158,8 +158,8 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
             //     CONTROL_SCANLINE = 222;
             // }
 
-            //const int32_t CONTROL_SCANLINE = 462; // calibrated length to right: 280px
-            const int32_t distance = 280; //280
+            //const int32_t CONTROL_SCANLINE = 462; // calibrated length to right: 300px
+            const int32_t distance = 110;//300
 
             cv::Mat grey_image;
             if(m_image!=NULL){
@@ -183,31 +183,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                 //Canny(grey_image, grey_image, 50, 60, 3);
 
 
-                //cerr << "Image Converted" << endl;
-
-                vector<vector<cv::Point> > contours;
-                vector<cv::Vec4i> hierarchy;
-
-                cv::Mat m = grey_image.clone(); 
-                //cv::findContours(m, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-                cv::findContours(m, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
-
-                cv::Scalar color = cv::Scalar(255, 0, 0);
-                cv::drawContours( m, contours, -1, color, 2, 8, hierarchy, 2, cv::Point() );
-
-                // for( unsigned int i = 0; i< sizeof(contours); i++ ){
-                //     cv::Scalar color = cv::Scalar(255, 0, 0);
-                //    ///cv::drawContours( m, contours, i, color, 2, 8, hierarchy, 2, cv::Point() );
-                //     cv::drawContours( m, contours, i, color);
-                // }
-                //END TEST Contours
-
-                //grey_image = m;
-
-                // //Show the processed image if m_debug == true
-                if(!grey_image.empty() && m_debug){
-                     cv::imshow("Contours image", m);
-                 }
+   
                 cvWaitKey(10);
             }
 
@@ -742,6 +718,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                  // }
             }catch(string &exception) {
                 cerr << "Serial port could not be created: " << exception << endl;
+                serialOn = false;
             }
 
             //End sending to serial port

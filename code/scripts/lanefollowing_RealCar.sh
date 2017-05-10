@@ -10,7 +10,7 @@ xterm -hold -e "docker run -ti --rm --net=host -v $HOME/DIT-168:/opt/configurati
 sleep 3
 
 #Real camera with own built proxy
-xterm -hold -e "docker run -ti --rm --net=host --ipc=host -e DISPLAY=$DISPLAY --group-add video -v $HOME/DIT-168:/opt/configuration --device=/dev/video0:/dev/video0 seresearch/scaledcars-on-opendlv-on-opendlv-core-on-opendavinci-on-base-dev /opt/opendlv.scaledcars/bin/cameraproxy --cid=111 --freq=20" &
+xterm -hold -e "xhost + && docker run -ti --rm --net=host --ipc=host -e DISPLAY=$DISPLAY --group-add video -v $HOME/DIT-168:/opt/configuration --device=/dev/video0:/dev/video0 seresearch/scaledcars-on-opendlv-on-opendlv-core-on-opendavinci-on-base-dev /opt/opendlv.scaledcars/bin/cameraproxy --cid=111 --freq=20" &
 sleep 3
 
 #Lanefollower (RealCar)
