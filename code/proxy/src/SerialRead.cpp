@@ -25,7 +25,7 @@
 					//cerr << "go go ";
 					//*s="";
 					output=s;
-					// cout << "Received " << s.length() << " bytes containing '" << s << "'" << endl;
+					cout << "Received " << s.length() << " bytes containing '" << s << "'" << endl;
 		}
 
 

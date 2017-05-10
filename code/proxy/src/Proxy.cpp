@@ -83,7 +83,7 @@ namespace automotive {
 			
 			try{
 				laneFollower = std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("1", BUFFER_SIZE));
-				overtaking= std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("sensorMemory", BUFFER_SIZE));
+				overtaking = std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("sensorMemory", BUFFER_SIZE));
 				std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::createSharedMemory("dsads", 10));
 				if (overtaking->isValid()) {
 					cerr<<"valid memory \n";
@@ -133,37 +133,45 @@ namespace automotive {
 				
 			serial->start();
 			
-				char *p = static_cast<char*>(overtaking->getSharedMemory());
 				
 				while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
-					
+					{
+					odcore::base::Lock o(overtaking); 
+					char *p = static_cast<char*>(overtaking->getSharedMemory());
 					/*
 					 * Do something with the serial data
 					 * */
 					string serialInput=handler.readstr();
 					char input;
-					if((serialInput.size()>0?(input=serialInput.at(0))!=13&&input!=10?input:0:0)!=0){ 
-						
+					if(serialInput.size()>0){ 
+						input = serialInput.at(0);
 
 						cerr<<"Id = " << (int)((input >> 5) & 0x07) << " Value = " << (int)(input&31)*2 << endl;
 						
-						odcore::base::Lock o(overtaking);  
-						//char *p = static_cast<char*>(overtaking->getSharedMemory());					
-						p[(input>>5)&7]=input;
+						//odcore::base::Lock o(overtaking); 
+						//char *p = static_cast<char*>(overtaking->getSharedMemory());
+						//if( (int)((input >> 5) & 0x07) == 1)
+						//cerr << "input = " << (int)input << endl;
+ 
+						//char *p = static_cast<char*>(overtaking->getSharedMemory());
+						//cerr << "## Input = " << input << endl;		
+						//if( (int)((input >> 5) & 0x07) == 1)			
+						p[(int)((input >> 5) & 0x07)]=input&31;
 						
-						
+					
 					}
 					
 					if(p[0]!=0){
-						odcore::base::Lock o(overtaking);
+						//odcore::base::Lock o(overtaking);
 						std::stringstream stream;
 						stream<<p[0];
 						std::string value=stream.str();
 						serial->send(value);
-						p[0]=0;
-						cerr << "sending" << endl;
+						//p[0]=0;
+						cerr << "sending " << value << endl;
 					}
-					
+					}//Scope lock
+					odcore::base::Thread::usleepFor(1000);
 					
 				}
             
