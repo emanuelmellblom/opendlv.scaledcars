@@ -155,6 +155,7 @@ namespace automotive {
 					}
 					
 					if(p[0]!=0){
+						odcore::base::Lock o(overtaking);
 						std::stringstream stream;
 						stream<<p[0];
 						std::string value=stream.str();
