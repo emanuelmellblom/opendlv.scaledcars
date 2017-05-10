@@ -1,6 +1,7 @@
 #include <Wire.h>
 #include <Servo.h>
 #include <SharpIR.h>
+#include <Smartcar.h>
 //#include <QTRSensors.h>
 #include <RcCar.h>
 //#include <math.h>
@@ -18,7 +19,7 @@
 #define led_lights 9
 
 //Odometer
-#define odometer 6
+#define odometer 3
 
 #define MAXFORWSPEED 150
 #define MAXREVSPEED 100
@@ -27,6 +28,7 @@
 //esc
 Servo esc;
 Servo steering;
+Odometer encoder;
 RcCar* car ;
 //char command;
 
@@ -35,6 +37,9 @@ RcCar* car ;
 float value;
 float speeds;
 
+// For speed
+unsigned long lastDist;
+unsigned long lastTime;
 
 
 SharpIR frontRightIrSensor(GP2YA41SK0F,frontRightIrPin);
@@ -135,7 +140,7 @@ char sensorId = 0;
 
 char I2C[2] = {ultrasonic_Front_Center, ultrasonic_Front_Side};
 //data storage
-char SensorData[6] = {0, 0, 0, 0, 0,0};
+char SensorData[7] = {0, 0, 0, 0, 0, 0, 0};
 
 
 void loop() {		
@@ -159,6 +164,17 @@ unsigned long times = millis();
 		//distanceBackRightIr |=	(4 << 5);
 		SensorData[4] = distanceBackIr;
 
+    // Read once approx every 500ms
+    if(times - lastTime > 500)
+    {
+      unsigned long dist = encoder.getDistance();
+      char spd = (dist - lastDist) / ((times - lastTime) / 1000);
+      // Get speed since last iteration
+      lastDist = dist;
+      lastTime = times;
+      spd |= 6 << 5;
+      SensorData[5] = spd & 31;
+    }
 
 
 	if (ping) {
