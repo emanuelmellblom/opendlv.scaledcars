@@ -55,7 +55,7 @@ namespace automotive {
 			//serial=NULL;
 			//cerr << "go go " << endl;
 			}
-      
+
             //m_recorder(),
             //m_camera()
 
@@ -64,40 +64,40 @@ namespace automotive {
 
         void Proxy::setUp() {
 			for(int i=0;i<2;i++){
-				try {	
-					
+				try {
+
 					std::stringstream portStream;
 					portStream<<SERIAL_PORT<<i;
 					std::string port=portStream.str();
 					serial= std::shared_ptr<SerialPort> (SerialPortFactory::createSerialPort(port, BAUD_RATE));
-					
+
 					const uint32_t ONE_SECOND = 1000 * 1000;
 					odcore::base::Thread::usleepFor( ONE_SECOND);
 					break;
 				}catch(string &exception) {
 					cerr << "Serial port could not be created: " << exception << endl;
 				}
-			
+
 			}
-			
-			
+
+
 			try{
 				laneFollower = std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("1", BUFFER_SIZE));
 				overtaking = std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("sensorMemory", BUFFER_SIZE));
 				std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::createSharedMemory("dsads", 10));
 				if (overtaking->isValid()) {
 					cerr<<"valid memory \n";
-				
+
 				}
 			}catch(string &exception) {
 				cerr << "Shared memory could not created: " << exception << endl;
 			}
-			
-			
+
+
             // Get configuration data.
          //   KeyValueConfiguration kv = getKeyValueConfiguration();
 
-  
+
         }
 
         void Proxy::tearDown() {
@@ -108,7 +108,7 @@ namespace automotive {
             //delete overtaking;
         }
 
-      
+
 
         // This method will do the main data processing job.
         odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode Proxy::body() {
@@ -116,7 +116,7 @@ namespace automotive {
             uint32_t captureCounter = 0;
 				SerialRead handler;
 				serial->setStringListener(&handler);
-		
+
 				/*std::stringstream bufferStream;
 					bufferStream<<(char)captureCounter;
 					std::string output=bufferStream.str();
@@ -126,41 +126,41 @@ namespace automotive {
 				}else{
 					captureCounter=0;
 				}*/
-				
-				
-				
-				
-				
+
+
+
+
+
 			serial->start();
-			
-				
+
+
 				while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
 					{
-					odcore::base::Lock o(overtaking); 
-					char *p = static_cast<char*>(overtaking->getSharedMemory());
+					odcore::base::Lock o(overtaking);
+					ch++ar *p = static_cast<char*>(overtaking->getSharedMemory());
 					/*
 					 * Do something with the serial data
 					 * */
 					string serialInput=handler.readstr();
 					char input;
-					if(serialInput.size()>0){ 
+					if(serialInput.size()>0){
 						input = serialInput.at(0);
 
 						cerr<<"Id = " << (int)((input >> 5) & 0x07) << " Value = " << (int)(input&31)*2 << endl;
-						
-						//odcore::base::Lock o(overtaking); 
+
+						//odcore::base::Lock o(overtaking);
 						//char *p = static_cast<char*>(overtaking->getSharedMemory());
 						//if( (int)((input >> 5) & 0x07) == 1)
 						//cerr << "input = " << (int)input << endl;
- 
+
 						//char *p = static_cast<char*>(overtaking->getSharedMemory());
-						//cerr << "## Input = " << input << endl;		
-						//if( (int)((input >> 5) & 0x07) == 1)			
+						//cerr << "## Input = " << input << endl;
+						//if( (int)((input >> 5) & 0x07) == 1)
 						p[(int)((input >> 5) & 0x07)]=input&31;
-						
-					
+
+
 					}
-					
+
 					if(p[0]!=0){
 						//odcore::base::Lock o(overtaking);
 						std::stringstream stream;
@@ -172,9 +172,9 @@ namespace automotive {
 					}
 					}//Scope lock
 					odcore::base::Thread::usleepFor(1000);
-					
+
 				}
-            
+
             serial->stop();
 			serial->setStringListener(NULL);
 
@@ -185,4 +185,3 @@ namespace automotive {
 
     }
 } // automotive::miniature
-

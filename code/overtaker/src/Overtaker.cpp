@@ -28,7 +28,7 @@
 
 #include "Overtaker.h"
 
-//NEW FROM LANEFOLLOWING 
+//NEW FROM LANEFOLLOWING
 #include <stdint.h>
 #include <list>
  #include <opendavinci/odcore/base/Thread.h>
@@ -67,7 +67,7 @@ int32_t distance = 180; //280
 
         //NEW FROM LANEFOLLOWING
 
-        Overtaker::Overtaker(const int32_t &argc, char **argv) : TimeTriggeredConferenceClientModule(argc, argv, "Overtaker"), 
+        Overtaker::Overtaker(const int32_t &argc, char **argv) : TimeTriggeredConferenceClientModule(argc, argv, "Overtaker"),
             m_hasAttachedToSharedImageMemory(false),
             m_sharedImageMemory(),
             m_image(NULL),
@@ -78,7 +78,7 @@ int32_t distance = 180; //280
             m_eSum(0),
             m_eOld(0),
             m_vehicleControl() {}
-        
+
 
         Overtaker::~Overtaker() {}
 
@@ -154,8 +154,8 @@ int32_t distance = 180; //280
                     //     char reset = 0x00;
                     //     odcore::base::Lock l(sharedMemory);
                     //     char *p = static_cast<char*>(sharedMemory->getSharedMemory());
-                       
-                       
+
+
                     // }
 
                     uint32_t counter = 30;
@@ -167,7 +167,7 @@ int32_t distance = 180; //280
                         {
                         odcore::base::Lock l(sharedMemory);
                         char *p = static_cast<char*>(sharedMemory->getSharedMemory());
-                        
+
                         char x = p[sensorId];
                         if(sensorId == 2)
                         cerr << "x = " << ((int)x&31)*2 << endl;
@@ -176,7 +176,7 @@ int32_t distance = 180; //280
                         //Extract the sensor value from the received byte
                         value = (x & 31)*2;
 
-                        
+
                         //if(id == sensorId){
                             //p[sensorId] = 0x00;
                             // for(int i = 1; i < 8; i++){
@@ -212,7 +212,7 @@ int32_t distance = 180; //280
             cerr << "Output steering = " << (int)output << endl;
 
 
-            
+
 
             const string NAME = "sensorMemory";
             try{
@@ -228,7 +228,7 @@ int32_t distance = 180; //280
                     {
                     odcore::base::Lock l(sharedMemory);
                     char *p = static_cast<char*>(sharedMemory->getSharedMemory());
-                    p[0] = output;
+                    p[0] = output; //output to the aruino, output is the byte we send to the arduino.
                     }
                 }
             }
@@ -237,12 +237,68 @@ int32_t distance = 180; //280
             }
         }
 
+        void Overtaker::sendMovementSpeed(double movementSpeed) {
+          int movementSpeedOutput = movementSpeed;
+          cerr << "movement speed is = " << movementSpeedOutput << endl;
+          char output = ((int)(round(movementSpeedOutput))& 31; // what does this do? what is 31?
+          cerr << "Output movement speed = " << (int)output << endl;
+          const string NAME = "sensorMemory";
+          try{
+              std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
+              if (sharedMemory->isValid()) {
+                  {
+                  odcore::base::Lock l(sharedMemory);
+                  char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+                  p[0] = output; //output to the aruino, output is the byte we send to the arduino.
+                  }
+              }
+          }
+          catch(string &exception){
+              cerr << "sharedMemory not Attached " << exception << endl;
+          }
+        }
+
+
+/* another way would be to have both things integrated into one function, like below
+
+void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementSpeed){
+
+    //cerr << "org = " << steeringAngle << endl;
+    int steeringAngleDegrees = ((steeringAngle*180)/M_PI);
+    int movementSpeedOutput = movementSpeed;
+    cerr << "steeringAngle = " << steeringAngleDegrees << endl;
+    cerr << "movementSpeed = " << movementSpeedOutput<< endl;
+    char output = i guess this is the character byte that holds the information for the movement
+    cerr << "Output steering = " << (int)output << endl; -  this needs to be changed so it returns both things
+
+
+
+
+    const string NAME = "sensorMemory";
+    try{
+        std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
+        if (sharedMemory->isValid()) {
+            odcore::base::Lock l(sharedMemory);
+            char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+            p[0] = output; //output to the aruino, output is the byte we send to the arduino.+
+        }
+    }
+    catch(string &exception){
+        cerr << "sharedMemory not Attached " << exception << endl;
+    }
+}
+
+
+
+
+
+*/
         void Overtaker::processImage() {
 
             static bool useRightLaneMarking = true;
             double e = 0;
 
-            int32_t CONTROL_SCANLINE = 262;// 462, (372), 252 
+            int32_t CONTROL_SCANLINE = 262;// 462, (372), 252
 
             cv::Mat grey_image;
             if(m_image!=NULL){
@@ -262,8 +318,8 @@ int32_t distance = 180; //280
 
                 //original: blur(grey_image, blured, cv::Size(3,3) );
                 //Add blur to the image. Blur determined by the kernel size.
-                
-                //Apply Canny edge detection 
+
+                //Apply Canny edge detection
                 Canny(grey_image, grey_image, 50, 200, 3);
 
                 // vector<vector<cv::Point> > contours;
@@ -271,7 +327,7 @@ int32_t distance = 180; //280
                 // cv::RNG rng(12345);
                 // //Mat drawing = Mat::zeros( grey_image.size(), CV_8UC3 );
                 // //cv::findContours( grey_image, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
-             
+
                 // //cv::Mat drawing = cv::Mat::zeros( sizeof(grey_image), CV_8UC3 );
                 // cv::Mat m = grey_image.clone(); cv::findContours(m, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 
@@ -509,7 +565,7 @@ int32_t distance = 180; //280
             }
 
 
-   
+
             TimeStamp afterImageProcessing;
             if(m_debug){
                 //cerr << "Processing time: " << (afterImageProcessing.toMicroseconds() - beforeImageProcessing.toMicroseconds())/1000.0 << "ms." << endl;
@@ -575,7 +631,7 @@ int32_t distance = 180; //280
 
         // This method will do the main data processing job.
         odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode Overtaker::body() {
-            
+
             //-const int32_t ULTRASONIC_FRONT_CENTER = 3;
             //const int32_t ULTRASONIC_FRONT_RIGHT = 4;
             //-const int32_t INFRARED_FRONT_RIGHT = 0;
@@ -602,7 +658,7 @@ int32_t distance = 180; //280
 
                 // Get the most recent available container for a SharedImage.
                 Container c = getKeyValueDataStore().get(odcore::data::image::SharedImage::ID());
-                
+
                 if(m_simulator){
                     m_vehicleControl.setSpeed(2); //1
                 }
@@ -616,7 +672,7 @@ int32_t distance = 180; //280
                 }
 
                 // 1. Get most recent vehicle data:
-                
+
                 // if(m_simulator){
                 //     Container containerVehicleData = getKeyValueDataStore().get(VehicleData::ID());
                 //     VehicleData vd = containerVehicleData.getData<VehicleData> ();
@@ -640,22 +696,22 @@ int32_t distance = 180; //280
                     cerr << "### Object detected ###" << endl;
                     //double ulValue = readSensorData(ULTRASONIC_FRONT_CENTER);
                     //cerr << "received " << ulValue << " on ULTRASONIC_FRONT_CENTER" << endl;
-                    
+
                     // if(m_simulator){
                     //     vc.setSpeed(1);
-                    //     vc.setSteeringWheelAngle((-60*M_PI)/180); //-60 
+                    //     vc.setSteeringWheelAngle((-60*M_PI)/180); //-60
                     // }else{
                         sendSteeringAngle((-60*M_PI)/180);  //-60
                     //}
 
                     turnToLeftLane = true;
                     //driveOnLeftLane = true;
-                    
+
                     //turnToLeftLane = true;
                     goForward = false;
                 }
 
-                else if(turnToLeftLane){  
+                else if(turnToLeftLane){
                     cerr << "### turn to the left lane ###" << endl;
 
                     // if(m_simulator){
@@ -678,7 +734,7 @@ int32_t distance = 180; //280
 
                     //double di = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
                     //cerr << "IR front right = " << di << endl;
-                    
+
                     //if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 2.60){
                     int irValue = readSensorData(1);
                     cerr << "received " << irValue << " on INFRARED_FRONT_RIGHT" << endl;
@@ -691,7 +747,7 @@ int32_t distance = 180; //280
                 }
 
                 if(driveOnLeftLane){
-                   
+
                     //distance = 280;
                     cerr << "### driving on the left lane ###" << endl;
                     //while((sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 || sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
@@ -702,7 +758,7 @@ int32_t distance = 180; //280
                         //cerr << "Front sensor = " << sensorF << " Back sensor = " << sensorB << endl;
 
                         c = getKeyValueDataStore().get(odcore::data::image::SharedImage::ID());
-                
+
                         if (c.getDataType() == odcore::data::image::SharedImage::ID()) {
                             has_next_frame = readSharedImage(c);
                         }
@@ -735,14 +791,14 @@ int32_t distance = 180; //280
                         //Get new sensor data
                         //containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
                         //sbd = containerSensorBoardData.getData<SensorBoardData> ();
-                       
+
                     }
                     driveOnLeftLane = false;
                     turnToRightLane = true;
                 }
 
                 else if(turnToRightLane){
-                    
+
                     //distance = 110;
 
                     cerr << "### Turn back to right lane ###" << endl;
@@ -752,7 +808,7 @@ int32_t distance = 180; //280
                     //cerr << "Infrared front right = " <<  inf4 << endl;
 
                     //double v = sbd.getValueForKey_MapOfDistances(ULTRASONIC_REAR_RIGHT)
-                             
+
                         //if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
                         if(readSensorData(INFRARED_REAR_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) == 0){
                             count++;
@@ -760,7 +816,7 @@ int32_t distance = 180; //280
                             //cerr << "Infrared rear right = " <<  inf << endl;
                             //double inf2 = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
                             //cerr << "Infrared front right = " <<  inf2 << endl;
-                            
+
                             // if(m_simulator){
                             //     vc.setSpeed(1);
                             //     vc.setSteeringWheelAngle((45*M_PI)/180); //45
@@ -808,12 +864,12 @@ int32_t distance = 180; //280
                     //     vc.setSpeed(1);
                     //     vc.setSteeringWheelAngle(steering);
                     // }else{
-                        //cerr << "styr" << steering <<endl; 
+                        //cerr << "styr" << steering <<endl;
                         sendSteeringAngle(steering);
 
                    // }
                 }
-                
+
                 // if(m_simulator){
                 //     Container control(vc);
                 //     //Send container.

@@ -57,9 +57,10 @@ reads a byte from serial port, current speed and angle , reads them as bytes and
 
 void byteDecode(int byteIn, float *speed, float * angle) {
   float tempAng = *angle;
+  float tempSpd = *speed;
   *angle = ((byteIn & 31) - 15) * 4;
   *speed = (((byteIn & 224) >> 5) - 3) / 2;
-
+  //add mapping for speed
   if (*angle == 48) {
     //command='a';
     *angle = tempAng;
@@ -146,6 +147,38 @@ char SensorData[7] = {0, 0, 0, 0, 0, 0, 0};
 
 void loop() {
 
+
+/*
+First thing that needs to happen is to check whether the RC controller is connected. The car should not move for any reason if the controller is disconected for safety reasons.
+therefore, when it is disconnected, it should give a feedback to the bluetooth serial and the proxy that it is on emergency mode/controller disconnected.
+if it is connected, we should send the rc value as feedback to the bluetooth serial.
+then we should measure the value of it when we press it all the way to the back. then we use that value so when the check is done everytime and its pressed all the way there it interrupts the vehicle
+Now next step is how to handle the emergency stopping from tHE PROXY SIDE
+*/
+/*implement controller handshake so that the car stops when the controller is disconected and add feedback when the controller
+/*filter out input from rc controller*/
+/*set speed from rc controller*/
+	if (speedCH / 10 < 190) {
+    if (speeCH /10 < valueAtWhichItMustStopAndInterrupt) {
+      car->setSpeed(car->NEUTRAL);
+      car->setAngle(90);
+      Serial2.println("car is interrupted manually!!!");
+      Serial.println("stuff to print to the proxy to let it know that we are stopping it")
+    }
+    else {
+      car->setRawSpeed(&speedLimit, speedCH);
+    }
+	}
+  else {
+		car->setSpeed(car->NEUTRAL);
+		car->setAngle(90);
+	}
+	Serial2.println(" delay is"+String(millis()-times));
+  Serial2.println(" value is " + speedCH/10 );
+}
+/* proxy input is : -60 to 60 for steering angle, 5 bits of which are steering info 3 bits are ms. the frist three bytes should show the speed */
+
+
 unsigned long times = millis();
 
 		int n=0; //data average of a reading set from frontIRsensor, save it in the array, then read again from backRightIrSensorIRsensor then a last time for backIRsensor
@@ -224,7 +257,7 @@ unsigned long times = millis();
 
 
 /* controller stuff here */
-	unsigned int steeringCH = pulseIn(rcController, HIGH);
+	unsigned int steeringCH = pulseIn(rcController, HIGH); //add a parameter for timeout so when controller doesnt work it doesnt freeze
 		//steering.write(steeringCH);
 		//min <90   max >180
 	unsigned int speedCH = pulseIn(speedPin, HIGH);
@@ -240,24 +273,12 @@ unsigned long times = millis();
     //Serial2.println("speed is"+String(speeds));
 		// Serial.println(k);
 		car->setAngle(value + 120);
+    car->setSpeed(speed);
 
 	}else {
 		//Serial2.println("not available####3");
 
 	}
-
-/*filter out input from rc controller*/
-/*set speed from rc controller*/
-	if (speedCH / 10 < 190) {
-		car->setRawSpeed(&speedLimit, speedCH);
-	}else {
-		car->setSpeed(car->NEUTRAL);
-		//command='c';
-		car->setAngle(90);
-	}
-	Serial2.println(" delay is"+String(millis()-times));
-}
-/* proxy input is : -60 to 60 for steering angle, 5 bits of which are steering info 3 bits are ms. the frist three bytes should show the speed */
 
 
 
