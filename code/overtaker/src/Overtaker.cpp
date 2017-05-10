@@ -61,7 +61,7 @@ namespace scaledcars{
 //NEW FROM LANEFOLLOWER
 using namespace odcore::data::image;
 double steering;
-int32_t distance = 280; //280
+int32_t distance = 110; //280
 //------
 
 
@@ -150,24 +150,37 @@ int32_t distance = 280; //280
                 std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
 
                 if (sharedMemory->isValid()) {
+                    // if(sharedMemory!=NULL){
+                    //     char reset = 0x00;
+                    //     odcore::base::Lock l(sharedMemory);
+                    //     char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+                       
+                       
+                    // }
+
                     uint32_t counter = 30;
                     while (counter-- > 0) {
                         int id;
-                        int value;
-                        {
+                        char value;
+                    {
                         // Using a scoped lock to lock and automatically unlock a shared memory segment.
                         odcore::base::Lock l(sharedMemory);
                         char *p = static_cast<char*>(sharedMemory->getSharedMemory());
                         
                         //Extract the sensor ID from the received byte
-                        id = p[sensorId] >> 5 & 0x03;
+                        id = p[sensorId] >> 5 & 0x07;
                         //Extract the sensor value from the received byte
-                        value = p[sensorId] & 31;
-                        }
+                        value = (p[sensorId] & 31)*2;
+                        
                         if(id == sensorId){
-                            returnValue = value;
+                            //p[sensorId] = 0x00;
+                            for(int i = 1; i < 8; i++){
+                                p[i] = 0x00;
+                            }
+                            returnValue = value & 255;
                             break;
                         }
+                    }
                         // Sleep some time.
                         //const uint32_t ONE_SECOND = 1000 * 1000;
                         odcore::base::Thread::usleepFor(1000);
@@ -182,7 +195,7 @@ int32_t distance = 280; //280
 
         void Overtaker::sendSteeringAngle(double steeringAngle){
 
-            cerr << "org = " << steeringAngle << endl;
+            //cerr << "org = " << steeringAngle << endl;
             double steeringAngleDegrees = ((steeringAngle*180)/M_PI);
             cerr << "steeringAngle = " << steeringAngleDegrees << endl;
             char output = 0x00;
@@ -194,6 +207,13 @@ int32_t distance = 280; //280
             try{
                 std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
                 if (sharedMemory->isValid()) {
+                    // if(sharedMemory!=NULL){
+                    //     char reset = 0x00;
+                    //     odcore::base::Lock l(sharedMemory);
+                    //     char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+                    //     p[0] = reset;
+                    // }
+                    //cerr << "Writing (Angle) shared memory is valid" << endl;
                     {
                     odcore::base::Lock l(sharedMemory);
                     char *p = static_cast<char*>(sharedMemory->getSharedMemory());
@@ -202,7 +222,7 @@ int32_t distance = 280; //280
                 }
             }
             catch(string &exception){
-                cerr << "sharedMemory not created " << exception << endl;
+                cerr << "sharedMemory not Attached " << exception << endl;
             }
         }
 
@@ -536,6 +556,7 @@ int32_t distance = 280; //280
             //m_vehicleControl.setSpeed(2);
             //m_vehicleControl.setSteeringWheelAngle(desiredSteering);
             steering = desiredSteering;
+            //cerr << "Original steering value = " << steering << endl;
         }
 
 
@@ -550,7 +571,7 @@ int32_t distance = 280; //280
              //Sensor Id's Real Car
             int INFRARED_FRONT_RIGHT = 5;
             int INFRARED_REAR_RIGHT = 1;
-            int ULTRASONIC_FRONT_CENTER = 2;
+            int ULTRASONIC_FRONT_CENTER = 2; //2
             //int ULTRASONIC_FRONT_RIGHT = 3;
             //int INFRARED_BACK = 4;
 
@@ -599,14 +620,16 @@ int32_t distance = 280; //280
 
                 //Check for object Simulator
                 //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
-                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 20 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 35 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
                     cerr << "Object detected" << endl;
+                    //double ulValue = readSensorData(ULTRASONIC_FRONT_CENTER);
+                    //cerr << "received " << ulValue << " on ULTRASONIC_FRONT_CENTER" << endl;
                     
                     if(m_simulator){
                         vc.setSpeed(1);
-                        vc.setSteeringWheelAngle(-60); //-45
+                        vc.setSteeringWheelAngle((-60*M_PI)/180); //-60 
                     }else{
-                        sendSteeringAngle(-60);
+                        sendSteeringAngle((-60*M_PI)/180);  //-60
                     }
 
                     turnToLeftLane = true;
@@ -621,7 +644,7 @@ int32_t distance = 280; //280
 
                     if(m_simulator){
                         vc.setSpeed(1);
-                        vc.setSteeringWheelAngle(-50);
+                        vc.setSteeringWheelAngle((-50*M_PI)/180); //-50
                         Container cont(vc);
                         // Send container.
                         getConference().send(cont);
@@ -632,7 +655,7 @@ int32_t distance = 280; //280
                         // Send container.
                         getConference().send(cont1);
                     }else{
-                        sendSteeringAngle(-50);
+                        sendSteeringAngle((-50*M_PI)/180); //-50
                         odcore::base::Thread::usleepFor(100000);
                         sendSteeringAngle(0);
                     }
@@ -641,16 +664,21 @@ int32_t distance = 280; //280
                     //cerr << "IR front right = " << di << endl;
                     
                     //if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 2.60){
-                    if(readSensorData(INFRARED_FRONT_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) < 2.60){
+                    int irValue = readSensorData(INFRARED_FRONT_RIGHT);
+                    cerr << "received " << irValue << " on INFRARED_FRONT_RIGHT" << endl;
 
+                    if(readSensorData(INFRARED_FRONT_RIGHT) > 0){ //&& readSensorData(INFRARED_FRONT_RIGHT) < 8
+                        cerr << "Infrared front detected object" << endl;
                         driveOnLeftLane = true;
                         turnToLeftLane = false;
                     }
                 }
 
                 if(driveOnLeftLane){
+
+
                    
-                    distance = 280;
+                    //distance = 280;
                     cerr << "driving on the left lane" << endl;
                     //while((sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 || sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
                     while((readSensorData(INFRARED_FRONT_RIGHT) > 0 || readSensorData(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
@@ -686,7 +714,7 @@ int32_t distance = 280; //280
                         }
 
                         //if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT)<0){
-                        if(readSensorData(INFRARED_FRONT_RIGHT)<0){
+                        if(readSensorData(INFRARED_FRONT_RIGHT)<=0){
                             cerr << "breakin out of while" << endl;
                             break;
                         }
@@ -702,7 +730,7 @@ int32_t distance = 280; //280
 
                 else if(turnToRightLane){
                     
-                    distance = 280;
+                    distance = 110;
 
                     cerr << "Turn back to right lane" << endl;
                     double inf3 = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
@@ -713,7 +741,7 @@ int32_t distance = 280; //280
                     //double v = sbd.getValueForKey_MapOfDistances(ULTRASONIC_REAR_RIGHT)
                              
                         //if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
-                        if(readSensorData(INFRARED_REAR_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) < 0){
+                        if(readSensorData(INFRARED_REAR_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) == 0){
                             count++;
                             double inf = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
                             cerr << "Infrared rear right = " <<  inf << endl;
@@ -722,7 +750,7 @@ int32_t distance = 280; //280
                             
                             if(m_simulator){
                                 vc.setSpeed(1);
-                                vc.setSteeringWheelAngle(45);
+                                vc.setSteeringWheelAngle((45*M_PI)/180); //45
                                 Container cont(vc);
                                 // Send container.
                                 getConference().send(cont);
@@ -733,7 +761,7 @@ int32_t distance = 280; //280
                                 // Send container.
                                 getConference().send(cont1);
                             }else{
-                                sendSteeringAngle(45);
+                                sendSteeringAngle((45*M_PI)/180); //45
                                 odcore::base::Thread::usleepFor(200000);
                                 sendSteeringAngle(0);
                             }
@@ -741,13 +769,13 @@ int32_t distance = 280; //280
                         }else{
                             if(m_simulator){
                                 vc.setSpeed(1);
-                                vc.setSteeringWheelAngle(-45);
+                                vc.setSteeringWheelAngle((-45*M_PI)/180); //-45
                                 Container cont2(vc);
                                 // Send container.
                                 getConference().send(cont2);
                                 odcore::base::Thread::usleepFor(90000);
                             }else{
-                                sendSteeringAngle(-45);
+                                sendSteeringAngle((-45*M_PI)/180); //-45
                                 odcore::base::Thread::usleepFor(90000);
                             }
 
@@ -767,7 +795,7 @@ int32_t distance = 280; //280
                         vc.setSpeed(1);
                         vc.setSteeringWheelAngle(steering);
                     }else{
-                        cerr << "styr" << steering <<endl; 
+                        //cerr << "styr" << steering <<endl; 
                         sendSteeringAngle(steering);
 
                     }

@@ -31,7 +31,7 @@
 #include "automotivedata/GeneratedHeaders_AutomotiveData.h"
 #include "opendavinci/GeneratedHeaders_OpenDaVINCI.h"
 
-#include "LaneFollower.h"
+#include "old_LaneFollower.h"
 
 namespace automotive {
     namespace miniature {

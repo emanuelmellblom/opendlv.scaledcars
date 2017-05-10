@@ -30,7 +30,7 @@
 #include "opendavinci/GeneratedHeaders_OpenDaVINCI.h"
 
 // Include local header files.
-#include "../include/LaneFollower.h"
+#include "../include/old_LaneFollower.h"
 
 using namespace std;
 using namespace odcore::data;
