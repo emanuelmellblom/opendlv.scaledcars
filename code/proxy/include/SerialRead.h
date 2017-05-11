@@ -14,8 +14,10 @@
 			virtual ~SerialRead();
 			virtual void nextString(const std::string &s);
 			std::string readstr();
+			char get(int);
 		private:
 			std::string output;
+			char buff[8];
 		};
 
 
