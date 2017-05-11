@@ -116,7 +116,7 @@ namespace scaledcars {
 		return returnValue;
 	}
 
-	void Parking::sendSteeringAngle(double steeringAngle) {
+	void Parking::sendMotionData(double steeringAngle, int speed) {
 
 		cerr << "org = " << steeringAngle << endl;
 		double steeringAngleDegrees = ((steeringAngle * 180) / M_PI);
@@ -124,7 +124,8 @@ namespace scaledcars {
 		char output = 0x00;
 		output = (((int)(steeringAngleDegrees) / 4) + 15) & 31;
 
-
+		// Speed must be 0 - 7
+		output |= speed << 5;
 
 		const string NAME = "sensorMemory";
 		try {
@@ -188,8 +189,7 @@ namespace scaledcars {
 					vc.setSteeringWheelAngle(0);
 				}
 				else {*/
-					sendSteeringAngle(0);
-					// TODO: Speed
+					sendMotionData(0, 5);
 				//}
                     
                 // Get odometer value - probably approx in cm
@@ -222,7 +222,7 @@ namespace scaledcars {
 						vc.setSteeringWheelAngle(0);
 					}
 					else {*/
-						sendSteeringAngle(0);
+						sendMotionData(0, 3);
 						// sendSpeed(0)
 					// }
                 }
@@ -233,7 +233,7 @@ namespace scaledcars {
 						vc.setSteeringWheelAngle(90);
 					}
 					else {*/
-						sendSteeringAngle(90);
+						sendMotionData(90, 0);
 						// sendSpeed(-2)
 					// }
                 }
@@ -243,7 +243,7 @@ namespace scaledcars {
 						vc.setSteeringWheelAngle(-90);
 					}
 					else {*/
-						sendSteeringAngle(-90);
+						sendMotionData(-30, 0);
 						// sendSpeed(-2)
 					// }
                 }
@@ -254,7 +254,7 @@ namespace scaledcars {
 					// 	vc.setSteeringWheelAngle(0);
 					// }
 					// else {
-						sendSteeringAngle(0);
+						sendMotionData(0, 3);
 						// sendSpeed(0)
 					// }
                 }

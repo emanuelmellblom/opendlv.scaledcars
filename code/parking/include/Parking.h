@@ -100,7 +100,7 @@ namespace scaledcars {
 
 		int readSensorData(int sensorId);
 
-		void sendSteeringAngle(double steeringAngle);
+		void sendMotionData(double steeringAngle, int speed);
         };
 
 }
