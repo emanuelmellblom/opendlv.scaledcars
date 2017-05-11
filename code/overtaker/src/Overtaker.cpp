@@ -61,7 +61,7 @@ namespace scaledcars{
 //NEW FROM LANEFOLLOWER
 using namespace odcore::data::image;
 double steering;
-int32_t distance = 180; //280
+int32_t distance = 220; //280, 180
 //------
 
 
