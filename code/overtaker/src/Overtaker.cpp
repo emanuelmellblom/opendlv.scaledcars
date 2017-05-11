@@ -61,7 +61,7 @@ namespace scaledcars{
 //NEW FROM LANEFOLLOWER
 using namespace odcore::data::image;
 double steering;
-int32_t distance = 110; //280
+int32_t distance = 220; //280, 180
 //------
 
 
@@ -77,6 +77,7 @@ int32_t distance = 110; //280
             m_previousTime(),
             m_eSum(0),
             m_eOld(0),
+            m_speed(4),
             m_vehicleControl() {}
         
 
@@ -160,31 +161,39 @@ int32_t distance = 110; //280
 
                     uint32_t counter = 30;
                     while (counter-- > 0) {
-                        int id;
+                        //int id;
                         char value;
                     {
                         // Using a scoped lock to lock and automatically unlock a shared memory segment.
+                        {
                         odcore::base::Lock l(sharedMemory);
                         char *p = static_cast<char*>(sharedMemory->getSharedMemory());
                         
+                        char x = p[sensorId];
+                        if(sensorId == 2)
+                        cerr << "x = " << ((int)x&31)*2 << endl;
                         //Extract the sensor ID from the received byte
-                        id = p[sensorId] >> 5 & 0x07;
+                       // id = (x >> 5 )& 0x07;
                         //Extract the sensor value from the received byte
-                        value = (p[sensorId] & 31)*2;
+                        value = (x & 31)*2;
+
                         
-                        if(id == sensorId){
+                        //if(id == sensorId){
                             //p[sensorId] = 0x00;
-                            for(int i = 1; i < 8; i++){
-                                p[i] = 0x00;
-                            }
-                            returnValue = value & 255;
+                            // for(int i = 1; i < 8; i++){
+                            //     p[i] = 0x00;
+                            // }
+                            returnValue = value;
                             break;
+                        //}
                         }
                     }
                         // Sleep some time.
                         //const uint32_t ONE_SECOND = 1000 * 1000;
                         odcore::base::Thread::usleepFor(1000);
                     }
+                }else{
+                    cerr << "Invalid sharedMemory" << endl;
                 }
             }
             catch(string &exception) {
@@ -196,10 +205,16 @@ int32_t distance = 110; //280
         void Overtaker::sendSteeringAngle(double steeringAngle){
 
             //cerr << "org = " << steeringAngle << endl;
-            double steeringAngleDegrees = ((steeringAngle*180)/M_PI);
+            int steeringAngleDegrees = ((steeringAngle*180)/M_PI);
             cerr << "steeringAngle = " << steeringAngleDegrees << endl;
-            char output = 0x00;
-            output = (((int)(steeringAngleDegrees)/4)+15)& 31;
+            //char output = 0x00;
+
+            char output = ((int)(round(steeringAngleDegrees/4))+15)& 31;
+            output |= m_speed << 5;
+            //m_speed
+            //char output = ((29/4)+15)& 31;
+            cerr << "Output steering = " << (int)output << endl;
+
 
             
 
@@ -236,7 +251,10 @@ int32_t distance = 110; //280
             cv::Mat grey_image;
             if(m_image!=NULL){
                 cv::Mat blured;
+
                 cv::Mat image = cv::cvarrToMat(m_image, true, true, 0);
+
+                GaussianBlur( image, image, cv::Size( 5, 5 ),0,0);
 
                 //Rezise image size(width<cols>, height<rows>)
                 cv::Size size(640,400);
@@ -248,8 +266,7 @@ int32_t distance = 110; //280
 
                 //original: blur(grey_image, blured, cv::Size(3,3) );
                 //Add blur to the image. Blur determined by the kernel size.
-                GaussianBlur( grey_image, grey_image, cv::Size( 5, 5 ),0,0);
-
+                
                 //Apply Canny edge detection 
                 Canny(grey_image, grey_image, 50, 200, 3);
 
@@ -581,7 +598,7 @@ int32_t distance = 110; //280
             bool goForward = true;
             bool driveOnLeftLane = false;
             //bool onRightLaneTurnLeft = false;
-            int count=0;
+            int turnCounter = 0;
 
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
 
@@ -603,16 +620,18 @@ int32_t distance = 110; //280
                 }
 
                 // 1. Get most recent vehicle data:
-                Container containerVehicleData = getKeyValueDataStore().get(VehicleData::ID());
-                VehicleData vd = containerVehicleData.getData<VehicleData> ();
+                
+                // if(m_simulator){
+                //     Container containerVehicleData = getKeyValueDataStore().get(VehicleData::ID());
+                //     VehicleData vd = containerVehicleData.getData<VehicleData> ();
 
-                // 2. Get most recent sensor board data:
-                Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
-                SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
+                //     // 2. Get most recent sensor board data:
+                //     Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
+                //     SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
 
-                // Create vehicle control data.
-                VehicleControl vc;
-
+                //     // Create vehicle control data.
+                //     VehicleControl vc;
+                // }
 
                 /*
                  * Main overtaking Algorithm
@@ -620,17 +639,18 @@ int32_t distance = 110; //280
 
                 //Check for object Simulator
                 //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
-                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 35 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
-                    cerr << "Object detected" << endl;
+
+                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 50 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+                    cerr << "### Object detected ###" << endl;
                     //double ulValue = readSensorData(ULTRASONIC_FRONT_CENTER);
                     //cerr << "received " << ulValue << " on ULTRASONIC_FRONT_CENTER" << endl;
                     
-                    if(m_simulator){
-                        vc.setSpeed(1);
-                        vc.setSteeringWheelAngle((-60*M_PI)/180); //-60 
-                    }else{
+                    // if(m_simulator){
+                    //     vc.setSpeed(1);
+                    //     vc.setSteeringWheelAngle((-60*M_PI)/180); //-60 
+                    // }else{
                         sendSteeringAngle((-60*M_PI)/180);  //-60
-                    }
+                    //}
 
                     turnToLeftLane = true;
                     //driveOnLeftLane = true;
@@ -640,53 +660,53 @@ int32_t distance = 110; //280
                 }
 
                 else if(turnToLeftLane){  
-                    cerr << "turn to the left lane" << endl;
+                    cerr << "### turn to the left lane ###" << endl;
 
-                    if(m_simulator){
-                        vc.setSpeed(1);
-                        vc.setSteeringWheelAngle((-50*M_PI)/180); //-50
-                        Container cont(vc);
-                        // Send container.
-                        getConference().send(cont);
-                        odcore::base::Thread::usleepFor(100000);
-                        vc.setSpeed(1);
-                        vc.setSteeringWheelAngle(0);
-                        Container cont1(vc);
-                        // Send container.
-                        getConference().send(cont1);
-                    }else{
+                    // if(m_simulator){
+                    //     vc.setSpeed(1);
+                    //     vc.setSteeringWheelAngle((-50*M_PI)/180); //-50
+                    //     Container cont(vc);
+                    //     // Send container.
+                    //     getConference().send(cont);
+                    //     odcore::base::Thread::usleepFor(100000);
+                    //     vc.setSpeed(1);
+                    //     vc.setSteeringWheelAngle(0);
+                    //     Container cont1(vc);
+                    //     // Send container.
+                    //     getConference().send(cont1);
+                    // }else{
                         sendSteeringAngle((-50*M_PI)/180); //-50
-                        odcore::base::Thread::usleepFor(100000);
-                        sendSteeringAngle(0);
-                    }
+                        //odcore::base::Thread::usleepFor(100000);
+                        turnCounter++;
+                        cerr <<"turnCounter: "<< turnCounter << endl;
+                        //sendSteeringAngle(0);
+                    //}
 
                     //double di = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
                     //cerr << "IR front right = " << di << endl;
                     
                     //if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 2.60){
-                    int irValue = readSensorData(INFRARED_FRONT_RIGHT);
+                    int irValue = readSensorData(1);
                     cerr << "received " << irValue << " on INFRARED_FRONT_RIGHT" << endl;
 
-                    if(readSensorData(INFRARED_FRONT_RIGHT) > 0){ //&& readSensorData(INFRARED_FRONT_RIGHT) < 8
-                        cerr << "Infrared front detected object" << endl;
+                    if(irValue > 0 ){ //&& readSe
+                           
+                        cerr << "### Infrared front detected object ###" << endl;
                         driveOnLeftLane = true;
                         turnToLeftLane = false;
                     }
                 }
 
                 if(driveOnLeftLane){
-
-
                    
                     //distance = 280;
-                    cerr << "driving on the left lane" << endl;
+                    cerr << "### driving on the left lane ###" << endl;
                     //while((sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 || sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
                     while((readSensorData(INFRARED_FRONT_RIGHT) > 0 || readSensorData(INFRARED_REAR_RIGHT) > 0) && getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING){
 
-                        double sensorF = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
-                        double sensorB = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
-
-                        cerr << "Front sensor = " << sensorF << " Back sensor = " << sensorB << endl;
+                        //double sensorF = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
+                        //double sensorB = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
+                        //cerr << "Front sensor = " << sensorF << " Back sensor = " << sensorB << endl;
 
                         c = getKeyValueDataStore().get(odcore::data::image::SharedImage::ID());
                 
@@ -701,27 +721,27 @@ int32_t distance = 110; //280
                         if (true == has_next_frame) {
                             processImage();
                         }
-                        cerr << "Go forward in while" << endl;
+                        cerr << "### Go forward in while ###" << endl;
 
-                        if(m_simulator){
-                            vc.setSpeed(1);
-                            vc.setSteeringWheelAngle(steering);
-                            Container com(vc);
-                            // Send container.
-                            getConference().send(com);
-                        }else{
+                        // if(m_simulator){
+                        //     vc.setSpeed(1);
+                        //     vc.setSteeringWheelAngle(steering);
+                        //     Container com(vc);
+                        //     // Send container.
+                        //     getConference().send(com);
+                        // }else{
                             sendSteeringAngle(steering);
-                        }
+                        //}
 
                         //if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT)<0){
-                        if(readSensorData(INFRARED_FRONT_RIGHT)<=0){
-                            cerr << "breakin out of while" << endl;
+                        if(readSensorData(INFRARED_FRONT_RIGHT)==0){
+                            cerr << "### breakin out of while ###" << endl;
                             break;
                         }
 
                         //Get new sensor data
-                        containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
-                        sbd = containerSensorBoardData.getData<SensorBoardData> ();
+                        //containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
+                        //sbd = containerSensorBoardData.getData<SensorBoardData> ();
                        
                     }
                     driveOnLeftLane = false;
@@ -730,82 +750,91 @@ int32_t distance = 110; //280
 
                 else if(turnToRightLane){
                     
-                    distance = 110;
+                    //distance = 110;
 
-                    cerr << "Turn back to right lane" << endl;
-                    double inf3 = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
-                    cerr << "Infrared rear right = " <<  inf3 << endl;
-                    double inf4 = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
-                    cerr << "Infrared front right = " <<  inf4 << endl;
+                    cerr << "### Turn back to right lane ###" << endl;
+                    //double inf3 = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
+                    //cerr << "Infrared rear right = " <<  inf3 << endl;
+                    //double inf4 = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
+                    //cerr << "Infrared front right = " <<  inf4 << endl;
 
                     //double v = sbd.getValueForKey_MapOfDistances(ULTRASONIC_REAR_RIGHT)
                              
                         //if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
                         if(readSensorData(INFRARED_REAR_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) == 0){
-                            count++;
-                            double inf = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
-                            cerr << "Infrared rear right = " <<  inf << endl;
-                            double inf2 = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
-                            cerr << "Infrared front right = " <<  inf2 << endl;
                             
-                            if(m_simulator){
-                                vc.setSpeed(1);
-                                vc.setSteeringWheelAngle((45*M_PI)/180); //45
-                                Container cont(vc);
-                                // Send container.
-                                getConference().send(cont);
-                                odcore::base::Thread::usleepFor(200000);
-                                vc.setSpeed(1);
-                                vc.setSteeringWheelAngle(0);
-                                Container cont1(vc);
-                                // Send container.
-                                getConference().send(cont1);
-                            }else{
+                            turnCounter--;
+
+                            cerr <<"turnCounter" <<turnCounter << endl;
+                            //double inf = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
+                            //cerr << "Infrared rear right = " <<  inf << endl;
+                            //double inf2 = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
+                            //cerr << "Infrared front right = " <<  inf2 << endl;
+                            
+                            // if(m_simulator){
+                            //     vc.setSpeed(1);
+                            //     vc.setSteeringWheelAngle((45*M_PI)/180); //45
+                            //     Container cont(vc);
+                            //     // Send container.
+                            //     getConference().send(cont);
+                            //     odcore::base::Thread::usleepFor(200000);
+                            //     vc.setSpeed(1);
+                            //     vc.setSteeringWheelAngle(0);
+                            //     Container cont1(vc);
+                            //     // Send container.
+                            //     getConference().send(cont1);
+                            // }else{
                                 sendSteeringAngle((45*M_PI)/180); //45
-                                odcore::base::Thread::usleepFor(200000);
-                                sendSteeringAngle(0);
-                            }
+                                odcore::base::Thread::usleepFor(100000);
+                                //sendSteeringAngle(0);
+                           // }
+                            if(turnCounter ==0){
+
+                            turnToRightLane = false;
+                            goForward = true;
+
+                                }
 
                         }else{
-                            if(m_simulator){
-                                vc.setSpeed(1);
-                                vc.setSteeringWheelAngle((-45*M_PI)/180); //-45
-                                Container cont2(vc);
-                                // Send container.
-                                getConference().send(cont2);
-                                odcore::base::Thread::usleepFor(90000);
-                            }else{
+                            // if(m_simulator){
+                            //     vc.setSpeed(1);
+                            //     vc.setSteeringWheelAngle((-45*M_PI)/180); //-45
+                            //     Container cont2(vc);
+                            //     // Send container.
+                            //     getConference().send(cont2);
+                            //     odcore::base::Thread::usleepFor(90000);
+                            // }else{
                                 sendSteeringAngle((-45*M_PI)/180); //-45
                                 odcore::base::Thread::usleepFor(90000);
-                            }
+                            //}
 
                             turnToRightLane = false;
                             goForward = true;
                             //onRightLaneTurnLeft = true;
-                            count = 0;
+                          //  count = 0;
                         }
                 }
 
                 else if(goForward){
                      //turnToRightLane = false;
                     //goForward = false;
-                    cerr << "Go forward again -------- hello" << endl;
+                    cerr << "### Go forward again ###" << endl;
 
-                    if(m_simulator){
-                        vc.setSpeed(1);
-                        vc.setSteeringWheelAngle(steering);
-                    }else{
+                    // if(m_simulator){
+                    //     vc.setSpeed(1);
+                    //     vc.setSteeringWheelAngle(steering);
+                    // }else{
                         //cerr << "styr" << steering <<endl; 
                         sendSteeringAngle(steering);
 
-                    }
+                   // }
                 }
                 
-                if(m_simulator){
-                    Container control(vc);
-                    //Send container.
-                    getConference().send(control);
-                }
+                // if(m_simulator){
+                //     Container control(vc);
+                //     //Send container.
+                //     getConference().send(control);
+                // }
              }
 
             return odcore::data::dmcp::ModuleExitCodeMessage::OKAY;

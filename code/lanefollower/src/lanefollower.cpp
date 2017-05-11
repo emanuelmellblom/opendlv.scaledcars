@@ -159,7 +159,7 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
             // }
 
             //const int32_t CONTROL_SCANLINE = 462; // calibrated length to right: 300px
-            const int32_t distance = 110;//300
+            const int32_t distance = 180;//300
 
             cv::Mat grey_image;
             if(m_image!=NULL){
@@ -718,7 +718,6 @@ lanefollower::lanefollower(const int &argc, char **argv): TimeTriggeredConferenc
                  // }
             }catch(string &exception) {
                 cerr << "Serial port could not be created: " << exception << endl;
-                serialOn = false;
             }
 
             //End sending to serial port

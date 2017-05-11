@@ -102,6 +102,7 @@ namespace scaledcars{
                 odcore::data::TimeStamp m_previousTime;
                 double m_eSum;
                 double m_eOld;
+                int m_speed;
                 automotive::VehicleControl m_vehicleControl;
         };
 

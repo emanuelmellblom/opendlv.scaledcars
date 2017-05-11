@@ -25,10 +25,17 @@
 					//cerr << "go go ";
 					//*s="";
 					output=s;
-					// cout << "Received " << s.length() << " bytes containing '" << s << "'" << endl;
+					//cout << "Received " << s.length() << " bytes containing '" << s << "'" << endl;
+
+					for(unsigned int i = 0; i < s.length(); i++){
+						//((s.at(i) & 224) >> 5) & 0x07;
+						buff[((s.at(i) & 224) >> 5) & 0x07] = s.at(i);
+					}
 		}
 
-
+		char SerialRead::get(int i){
+			return buff[i];
+		}
 
 		std::string SerialRead::readstr() {
 					//cerr << "go go ";
