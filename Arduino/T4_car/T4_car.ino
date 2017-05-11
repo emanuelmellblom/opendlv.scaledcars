@@ -57,7 +57,6 @@ reads a byte from serial port, current speed and angle , reads them as bytes and
 
 void byteDecode(char byteIn, float *speed, float * angle) {
   float tempAng = *angle;
-  float tempSpd = *speed;
   *angle = ((byteIn & 31) - 15) * 4;
   //Serial2.println("qwdwe  "+String(((float)((byteIn & 224) >> 5)-3)));
    //Serial2.println("abba  "+String(((float)((byteIn & 224) >> 5)-3)/2));
@@ -109,7 +108,7 @@ void setup() {
 	Wire.begin(); // I2C comms
 	encoder.begin();
 	//Serial
-	//Serial2.begin(9600);
+	Serial2.begin(9600);
 	Serial.begin(9600);
 	//Serial.println("g");
 	car->setSpeed(0);
@@ -232,7 +231,7 @@ void loop() {
 
 	for (int i = 1; i < sizeof(SensorData); i++) {
 
-		//Serial.print(SensorData[i]);
+		Serial.print(SensorData[i]);
 		//if(i==2 && ((SensorData[i]>>5)&7)==2)
 		//Serial.println("ultras sees "+String(((SensorData[2])&31)*2)+" id is "+String((SensorData[2]>>5)&7));
 	
@@ -269,7 +268,7 @@ void loop() {
 	}
 /*filter out input from rc controller*/
 /*set speed from rc controller*/
-Serial.println("hello "+String(speedCH));
+//Serial.println("hello "+String(speedCH));
 	if (speedCH / 10 < 190) {
 		//Serial2.println(speedLimit(speedCH));
 		if( car->isValidMoveSpeed(speedLimit(speedCH))){
@@ -277,15 +276,17 @@ Serial.println("hello "+String(speedCH));
 			//car->setSpeed(0);
 		}
 		//car->setRawSpeed(&speedLimit, speedCH);
-		if(ping)
+		Serial2.println(ping);
+		if(ping){
+			Serial2.println(speedCH);
 			car->setRawSpeed(&speedLimit, speedCH);
-		else{
-			Serial.println("hello");
-			car->setSpeed(-1.5);
-			delay(1);
+		}else{
+			//Serial.println("hello");
+			car->setSpeed(speeds);
+			//delay(1);
 				
-			car->setSpeed(1.5);
-			delay(1);
+			//car->setSpeed(-1.5);
+			//delay(1);
 			//car->setSpeed(1.5);
 			//delay(1000);
 		}
@@ -298,6 +299,7 @@ Serial.println("hello "+String(speedCH));
 	//Serial2.println(" delay is"+String(millis()-times));
 }
 /* proxy input is : -60 to 60 for steering angle, 5 bits of which are steering info 3 bits are ms. the frist three bytes should show the speed */
+
 
 
 

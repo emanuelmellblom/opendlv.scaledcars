@@ -18,10 +18,11 @@ class RcCar {
 			void setSpeed(float speed);
 			void setRawSpeed(int(*fptr)(int speed),int speed);
 			void setAngle(int);	 
-			
+			bool isValidMoveSpeed(int);
 			/*
 			 * Other functions
 			 * */
+			
 			unsigned int powI(int base,int exponent);/*Extension of the math lib*/
 			unsigned int charBufferToInt(char str[],int len);/*Extension of the String lib*/
 			int getRatio(float );

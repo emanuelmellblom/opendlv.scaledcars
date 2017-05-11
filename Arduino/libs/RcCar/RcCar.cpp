@@ -33,16 +33,20 @@ int  RcCar::getRatio(float val){
 
 void RcCar::setSpeed(float speed){
 	int x=getRatio(speed);
+	Serial.println(x);
 	this->Break(&x);
 	for(int i =0;i<2;i++){
 		esc.write(this->NEUTRAL);
-		delay(1);
+		delay(100);
 		esc.write(x);
+		delay(100);
 	}
 	
 	
 	this->currentSpeed=x;
 }
+
+
 
 void RcCar::setRawSpeed(int(*fptr)(int speed),int speed){
 	speed=fptr(speed);
@@ -60,12 +64,24 @@ void RcCar::Break(int* speed){
 	}
 	//Serial.println(String(this->currentSpeed)+" "+String(this->maxRevSpeed)+" "+String(this->minRevSpeed)+" ");
 	if((!(*speed <= this->minRevSpeed && *speed >= this->maxRevSpeed) &&  !(*speed >= this->minRevSpeed && *speed <= this->maxRevSpeed)) && ((this->currentSpeed >= minRevSpeed && this->currentSpeed <= maxRevSpeed) || (this->currentSpeed <= minRevSpeed && this->currentSpeed >= maxRevSpeed))){
-		//Serial.println("hello");
 		esc.write(getRatio(2));
 		delay(100);
 		esc.write(this->NEUTRAL);
 	}
 }  
+
+
+bool RcCar::isValidMoveSpeed(int speed){
+	//Serial2.println(speed);
+	if((speed<=minRevSpeed && speed>=maxRevSpeed ) || (minForwSpeed<=speed && speed <= maxForwSpeed)){
+		return true;
+		
+	}
+	
+	return false;
+
+
+}
 
 
 unsigned int RcCar::powI(int base,int exponent){
