@@ -33,7 +33,6 @@
 #include <opendavinci/GeneratedHeaders_OpenDaVINCI.h>
 #include <automotivedata/GeneratedHeaders_AutomotiveData.h>
 
-//#include "odvdscaledcarsdatamodel/generated/chalmersrevere/scaledcars/ExampleMessage.h"
 #include <odvdscaledcarsdatamodel/generated/chalmersrevere/scaledcars/ExampleMessage.h>
 
 #include "opendavinci/odcore/base/KeyValueConfiguration.h"
@@ -170,9 +169,9 @@ namespace scaledcars {
             //VehicleData vd = containerVehicleData.getData<VehicleData> ();
 
             // 2. Get most recent sensor board data describing virtual sensor data:
-            //Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
-            //SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
-            //TimeStamp currentTime;
+            Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
+            SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
+            TimeStamp currentTime;
             
             double deltaTime = (lastTime.toMicroseconds() - currentTime.toMicroseconds()) / 1000.0;
                     

@@ -32,8 +32,7 @@
 #include "automotivedata/GeneratedHeaders_AutomotiveData.h"
 #include "opendavinci/GeneratedHeaders_OpenDaVINCI.h"
 
-namespace automotive {
-    namespace miniature {
+namespace scaledcars {
 
         using namespace std;
 
@@ -41,7 +40,15 @@ namespace automotive {
          * This class is an example demonstrating how to park a simulated vehicle
          * using OpenDaVINCI's driving dynamics simulation.
          */
+
         class Parking : public odcore::base::module::TimeTriggeredConferenceClientModule {
+
+
+            enum CarState { Search, Park };
+            CarState state = Search;
+            double currentSpaceSize = 0;
+            const double minSpaceSize = 50;
+
             private:
                 /**
                  * "Forbidden" copy constructor. Goal: The compiler should warn
@@ -89,25 +96,13 @@ namespace automotive {
 
             private:
                 vector<double> m_foundGaps;
-                bool m_hasAttachedToSharedImageMemory;
-                std::shared_ptr<odcore::wrapper::SharedMemory> m_sharedImageMemory;
-                IplImage *m_image;
-      //cv::Mat m_image;
-      bool m_debug;
-      bool m_simulator;
-    CvFont m_font;
-    
-     odcore::data::TimeStamp m_previousTime;
-     double m_eSum;
-     double m_eOld;
-     automotive::VehicleControl m_vehicleControl;
+                bool m_simulator;
 
 		int readSensorData(int sensorId);
 
 		void sendSteeringAngle(double steeringAngle);
         };
 
-    } // miniature
-} // automotive
+}
 
 #endif /*BOXPARKER_H_*/

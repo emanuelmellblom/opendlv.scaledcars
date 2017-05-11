@@ -20,6 +20,6 @@
 #include "Parking.h"
 
 int32_t main(int32_t argc, char **argv) {
-    automotive::miniature::Parking bp(argc, argv);
+    scaledcars::Parking bp(argc, argv);
     return bp.runModule();
 }
