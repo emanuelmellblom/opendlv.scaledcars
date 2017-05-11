@@ -77,6 +77,7 @@ int32_t distance = 220; //280, 180
             m_previousTime(),
             m_eSum(0),
             m_eOld(0),
+            m_speed(4),
             m_vehicleControl() {}
         
 
@@ -207,7 +208,10 @@ int32_t distance = 220; //280, 180
             int steeringAngleDegrees = ((steeringAngle*180)/M_PI);
             cerr << "steeringAngle = " << steeringAngleDegrees << endl;
             //char output = 0x00;
+
             char output = ((int)(round(steeringAngleDegrees/4))+15)& 31;
+            output |= m_speed << 5;
+            //m_speed
             //char output = ((29/4)+15)& 31;
             cerr << "Output steering = " << (int)output << endl;
 
@@ -673,7 +677,7 @@ int32_t distance = 220; //280, 180
                     // }else{
                         sendSteeringAngle((-50*M_PI)/180); //-50
                         //odcore::base::Thread::usleepFor(100000);
-                        turnCounter++
+                        turnCounter++;
                         cerr <<"turnCounter: "<< turnCounter << endl;
                         //sendSteeringAngle(0);
                     //}
