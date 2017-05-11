@@ -77,7 +77,7 @@ int32_t distance = 220; //280, 180
             m_previousTime(),
             m_eSum(0),
             m_eOld(0),
-            m_speed(4),
+            m_speed(6),
             m_vehicleControl() {}
 
 
@@ -202,7 +202,7 @@ int32_t distance = 220; //280, 180
             return returnValue;
         }
 
-        void Overtaker::sendSteeringAngle(double steeringAngle, double speed){ //speed is between 0 and 7. 
+        void Overtaker::sendSteeringAngle(double steeringAngle){ //speed is between 0 and 7. 
 
             //cerr << "org = " << steeringAngle << endl;
             int steeringAngleDegrees = ((steeringAngle*180)/M_PI);
@@ -210,7 +210,7 @@ int32_t distance = 220; //280, 180
             //char output = 0x00;
 
             char output = ((int)(round(steeringAngleDegrees/4))+15)& 31;
-            output |= speed << 5;
+            output |= m_speed << 5;
             //m_speed
             //char output = ((29/4)+15)& 31;
             cerr << "Output steering = " << (int)output << endl;
@@ -241,26 +241,26 @@ int32_t distance = 220; //280, 180
             }
         }
 
-        void Overtaker::sendMovementSpeed(double movementSpeed) {
-          int movementSpeedOutput = movementSpeed;
-          cerr << "movement speed is = " << movementSpeedOutput << endl;
-          char output = ((int)(round(movementSpeedOutput))& 31; // what does this do? what is 31?
-          cerr << "Output movement speed = " << (int)output << endl;
-          const string NAME = "sensorMemory";
-          try{
-              std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
-              if (sharedMemory->isValid()) {
-                  {
-                  odcore::base::Lock l(sharedMemory);
-                  char *p = static_cast<char*>(sharedMemory->getSharedMemory());
-                  p[0] = output; //output to the aruino, output is the byte we send to the arduino.
-                  }
-              }
-          }
-          catch(string &exception){
-              cerr << "sharedMemory not Attached " << exception << endl;
-          }
-        }
+        // void Overtaker::sendMovementSpeed(double movementSpeed) {
+        //   int movementSpeedOutput = movementSpeed;
+        //   cerr << "movement speed is = " << movementSpeedOutput << endl;
+        //   char output = ((int)(round(movementSpeedOutput))& 31; // what does this do? what is 31?
+        //   cerr << "Output movement speed = " << (int)output << endl;
+        //   const string NAME = "sensorMemory";
+        //   try{
+        //       std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
+        //       if (sharedMemory->isValid()) {
+        //           {
+        //           odcore::base::Lock l(sharedMemory);
+        //           char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+        //           p[0] = output; //output to the aruino, output is the byte we send to the arduino.
+        //           }
+        //       }
+        //   }
+        //   catch(string &exception){
+        //       cerr << "sharedMemory not Attached " << exception << endl;
+        //   }
+        // }
 
 
 /* another way would be to have both things integrated into one function, like below

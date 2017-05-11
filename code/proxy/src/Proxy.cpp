@@ -137,7 +137,7 @@ namespace automotive {
 				while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
 					{
 					odcore::base::Lock o(overtaking);
-					ch++ar *p = static_cast<char*>(overtaking->getSharedMemory());
+					char *p = static_cast<char*>(overtaking->getSharedMemory());
 					/*
 					 * Do something with the serial data
 					 * */
