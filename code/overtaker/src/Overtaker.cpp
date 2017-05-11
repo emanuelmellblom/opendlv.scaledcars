@@ -673,7 +673,7 @@ int32_t distance = 220; //280, 180
                     // }else{
                         sendSteeringAngle((-50*M_PI)/180); //-50
                         //odcore::base::Thread::usleepFor(100000);
-                        turnCounter++
+                        turnCounter++;
                         cerr <<"turnCounter: "<< turnCounter << endl;
                         //sendSteeringAngle(0);
                     //}
