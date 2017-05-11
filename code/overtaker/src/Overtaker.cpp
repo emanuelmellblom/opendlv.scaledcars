@@ -202,7 +202,7 @@ int32_t distance = 220; //280, 180
             return returnValue;
         }
 
-        void Overtaker::sendSteeringAngle(double steeringAngle){
+        void Overtaker::sendSteeringAngle(double steeringAngle, double speed){ //speed is between 0 and 7. 
 
             //cerr << "org = " << steeringAngle << endl;
             int steeringAngleDegrees = ((steeringAngle*180)/M_PI);
@@ -210,7 +210,7 @@ int32_t distance = 220; //280, 180
             //char output = 0x00;
 
             char output = ((int)(round(steeringAngleDegrees/4))+15)& 31;
-            output |= m_speed << 5;
+            output |= speed << 5;
             //m_speed
             //char output = ((29/4)+15)& 31;
             cerr << "Output steering = " << (int)output << endl;
@@ -746,7 +746,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     cerr << "received " << irValue << " on INFRARED_FRONT_RIGHT" << endl;
 
                     if(irValue > 0 ){ //&& readSe
-                           
+
                         cerr << "### Infrared front detected object ###" << endl;
                         driveOnLeftLane = true;
                         turnToLeftLane = false;
@@ -818,7 +818,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
 
                         //if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
                         if(readSensorData(INFRARED_REAR_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) == 0){
-                            
+
                             turnCounter--;
 
                             cerr <<"turnCounter" <<turnCounter << endl;
