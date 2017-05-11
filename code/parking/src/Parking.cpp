@@ -30,10 +30,24 @@
 #include <opendavinci/odcore/base/Lock.h>
 #include <opendavinci/odcore/wrapper/SharedMemoryFactory.h>
 
-#include "odvdscaledcarsdatamodel/generated/chalmersrevere/scaledcars/ExampleMessage.h"
+#include <opendavinci/GeneratedHeaders_OpenDaVINCI.h>
+#include <automotivedata/GeneratedHeaders_AutomotiveData.h>
+
+//#include "odvdscaledcarsdatamodel/generated/chalmersrevere/scaledcars/ExampleMessage.h"
+#include <odvdscaledcarsdatamodel/generated/chalmersrevere/scaledcars/ExampleMessage.h>
 
 #include "opendavinci/odcore/base/KeyValueConfiguration.h"
 #include "opendavinci/odcore/data/TimeStamp.h"
+#include "Parking.h"
+
+#include "opendavinci/odcore/io/conference/ContainerConference.h"
+#include "opendavinci/odcore/data/Container.h"
+
+//
+#include <cstdio>
+#include <cmath>
+////
+
 
 namespace scaledcars {
 
@@ -44,6 +58,9 @@ namespace scaledcars {
 	using namespace odcore::wrapper;
 	using namespace automotive;
 	using namespace automotive::miniature;
+
+	using namespace odcore;
+	using namespace odcore::wrapper;
 
 	Parking::Parking(const int32_t &argc, char **argv) :
 		TimeTriggeredConferenceClientModule(argc, argv, "Parking"),
@@ -149,13 +166,13 @@ namespace scaledcars {
                 const int32_t ODOMETER = 6;
             
             // 1. Get most recent vehicle data:
-            Container containerVehicleData = getKeyValueDataStore().get(automotive::VehicleData::ID());
-            VehicleData vd = containerVehicleData.getData<VehicleData> ();
+            //Container containerVehicleData = getKeyValueDataStore().get(automotive::VehicleData::ID());
+            //VehicleData vd = containerVehicleData.getData<VehicleData> ();
 
             // 2. Get most recent sensor board data describing virtual sensor data:
-            Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
-            SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
-            TimeStamp currentTime;
+            //Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
+            //SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
+            //TimeStamp currentTime;
             
             double deltaTime = (lastTime.toMicroseconds() - currentTime.toMicroseconds()) / 1000.0;
                     
@@ -167,14 +184,14 @@ namespace scaledcars {
             // Moving state machine.
             if (state == Search) {
                 // Go forward.
-				if (m_simulator) {
+				/*if (m_simulator) {
 					vc.setSpeed(1);
 					vc.setSteeringWheelAngle(0);
 				}
-				else {
+				else {*/
 					sendSteeringAngle(0);
 					// TODO: Speed
-				}
+				//}
                     
                 // Get odometer value - probably approx in cm
                 currentSpaceSize += sbd.getValueForKey_MapOfDistances(ODOMETER) * deltaTime / 1000;
@@ -201,53 +218,53 @@ namespace scaledcars {
                             
                 // Stop completely
                 if (parkTimer < 1000) {
-					if (m_simulator) {
+					/*if (m_simulator) {
 						vc.setSpeed(0);
 						vc.setSteeringWheelAngle(0);
 					}
-					else {
+					else {*/
 						sendSteeringAngle(0);
 						// sendSpeed(0)
-					}
+					// }
                 }
                 // Backwards, steering wheel to the right.
                 else if (parkTimer < 2000) {
-					if (m_simulator) {
+					/*if (m_simulator) {
 						vc.setSpeed(-2);
 						vc.setSteeringWheelAngle(90);
 					}
-					else {
+					else {*/
 						sendSteeringAngle(90);
 						// sendSpeed(-2)
-					}
+					// }
                 }
                 else if (parkTimer < 3000) {
-					if (m_simulator) {
+					/*if (m_simulator) {
 						vc.setSpeed(-2);
 						vc.setSteeringWheelAngle(-90);
 					}
-					else {
+					else {*/
 						sendSteeringAngle(-90);
 						// sendSpeed(-2)
-					}
+					// }
                 }
                 // Finally, stop again
                 else if (parkTimer < 4000) {
-					if (m_simulator) {
-						vc.setSpeed(0);
-						vc.setSteeringWheelAngle(0);
-					}
-					else {
+					// if (m_simulator) {
+					// 	vc.setSpeed(0);
+					// 	vc.setSteeringWheelAngle(0);
+					// }
+					// else {
 						sendSteeringAngle(0);
 						// sendSpeed(0)
-					}
+					// }
                 }
 				// Maybe move forward until front sensor detects something?
             }
             // Create container for finally sending the data.
-            Container c(vc);
-            // Send container.
-            getConference().send(c);
+            // Container c(vc);
+            // // Send container.
+            // getConference().send(c);
         }
 
         return odcore::data::dmcp::ModuleExitCodeMessage::OKAY;

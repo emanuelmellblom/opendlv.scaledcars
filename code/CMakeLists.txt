@@ -54,7 +54,7 @@ add_subdirectory(lanefollower)
 add_subdirectory(overtaker)
 add_subdirectory(Cameraproxy)
 add_subdirectory(proxy)
-
+add_subdirectory(parking)
 ###########################################################################
 # Enable CPack to create .deb and .rpm.
 #

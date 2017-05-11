@@ -24,6 +24,14 @@
 
 #include "opendavinci/odcore/base/module/TimeTriggeredConferenceClientModule.h"
 
+#include <opendavinci/odcore/data/Container.h>
+#include <opendavinci/odcore/wrapper/SharedMemory.h>
+
+#include "opendavinci/odcore/base/module/TimeTriggeredConferenceClientModule.h"
+#include "opendavinci/odcore/data/TimeStamp.h"
+#include "automotivedata/GeneratedHeaders_AutomotiveData.h"
+#include "opendavinci/GeneratedHeaders_OpenDaVINCI.h"
+
 namespace automotive {
     namespace miniature {
 
@@ -81,6 +89,18 @@ namespace automotive {
 
             private:
                 vector<double> m_foundGaps;
+                bool m_hasAttachedToSharedImageMemory;
+                std::shared_ptr<odcore::wrapper::SharedMemory> m_sharedImageMemory;
+                IplImage *m_image;
+      //cv::Mat m_image;
+      bool m_debug;
+      bool m_simulator;
+    CvFont m_font;
+    
+     odcore::data::TimeStamp m_previousTime;
+     double m_eSum;
+     double m_eOld;
+     automotive::VehicleControl m_vehicleControl;
 
 		int readSensorData(int sensorId);
 
