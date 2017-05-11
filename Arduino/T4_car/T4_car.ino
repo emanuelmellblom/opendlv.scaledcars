@@ -103,13 +103,13 @@ void setup() {
 
 	encoder.attach(odometer);
 
-	car = new RcCar(MAXFORWSPEED * 10, 1400, MAXREVSPEED * 10, 1100, 1380, esc, steering);
+	car = new RcCar(MAXFORWSPEED * 10, 1400, MAXREVSPEED * 10, 1100, 1370, esc, steering);
   //esc.writeMicroseconds(50);
 
 	Wire.begin(); // I2C comms
 	encoder.begin();
 	//Serial
-	Serial2.begin(9600);
+	//Serial2.begin(9600);
 	Serial.begin(9600);
 	//Serial.println("g");
 	car->setSpeed(0);
@@ -191,8 +191,7 @@ void loop() {
 		unsigned long dist = encoder.getDistance()*2;
 		//Serial2.println("dist "+String(encoder.getDistance()));
 		int spd = ((dist - lastDist) / ((double)(times - lastTime) / 1000));
-		//Serial2.println("delta dist "+String(dist - lastDist)+" delta time "+ String((times - lastTime)));
-		Serial2.println(spd);
+
 		// Get speed since last iteration
 		lastDist = dist;
 		lastTime = times;
@@ -233,11 +232,10 @@ void loop() {
 
 	for (int i = 1; i < sizeof(SensorData); i++) {
 
-		Serial.print(SensorData[i]);
+		//Serial.print(SensorData[i]);
 		//if(i==2 && ((SensorData[i]>>5)&7)==2)
 		//Serial.println("ultras sees "+String(((SensorData[2])&31)*2)+" id is "+String((SensorData[2]>>5)&7));
-		
-		//Serial2.println(String((SensorData[i]&31)*2)+" id "+String((SensorData[i]>>5)&7));
+	
 	}
 
 
@@ -267,24 +265,29 @@ void loop() {
 			car->setAngle(angle + 120);
 		}
 	}else {
-		//Serial2.println("not available####3");
 
 	}
-
 /*filter out input from rc controller*/
 /*set speed from rc controller*/
+Serial.println("hello "+String(speedCH));
 	if (speedCH / 10 < 190) {
 		//Serial2.println(speedLimit(speedCH));
 		if( car->isValidMoveSpeed(speedLimit(speedCH))){
 			ping=true;
 			//car->setSpeed(0);
 		}
-		car->setRawSpeed(&speedLimit, speedCH);
-		Serial2.println(ping);
+		//car->setRawSpeed(&speedLimit, speedCH);
 		if(ping)
 			car->setRawSpeed(&speedLimit, speedCH);
 		else{
-			car->setSpeed(2);	
+			Serial.println("hello");
+			car->setSpeed(-1.5);
+			delay(1);
+				
+			car->setSpeed(1.5);
+			delay(1);
+			//car->setSpeed(1.5);
+			//delay(1000);
 		}
 	}else {
 		speeds=0;
@@ -292,7 +295,7 @@ void loop() {
 		ping=false;
 		car->setAngle(90);
 	}
-Serial2.println(" delay is"+String(millis()-times));
+	//Serial2.println(" delay is"+String(millis()-times));
 }
 /* proxy input is : -60 to 60 for steering angle, 5 bits of which are steering info 3 bits are ms. the frist three bytes should show the speed */
 
