@@ -61,7 +61,7 @@ namespace scaledcars{
 //NEW FROM LANEFOLLOWER
 using namespace odcore::data::image;
 double steering;
-int32_t distance = 180; //280
+int32_t distance = 220; //280, 180
 //------
 
 
@@ -77,6 +77,7 @@ int32_t distance = 180; //280
             m_previousTime(),
             m_eSum(0),
             m_eOld(0),
+            m_speed(4),
             m_vehicleControl() {}
 
 
@@ -207,8 +208,11 @@ int32_t distance = 180; //280
             int steeringAngleDegrees = ((steeringAngle*180)/M_PI);
             cerr << "steeringAngle = " << steeringAngleDegrees << endl;
             //char output = 0x00;
+
             char output = ((int)(round(steeringAngleDegrees/4))+15)& 31;
-            //char output = ((40/4)+15)& 31;
+            output |= m_speed << 5;
+            //m_speed
+            //char output = ((29/4)+15)& 31;
             cerr << "Output steering = " << (int)output << endl;
 
 
@@ -650,7 +654,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
             bool goForward = true;
             bool driveOnLeftLane = false;
             //bool onRightLaneTurnLeft = false;
-            int count=0;
+            int turnCounter = 0;
 
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
 
@@ -692,7 +696,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                 //Check for object Simulator
                 //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
 
-                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 45 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 50 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
                     cerr << "### Object detected ###" << endl;
                     //double ulValue = readSensorData(ULTRASONIC_FRONT_CENTER);
                     //cerr << "received " << ulValue << " on ULTRASONIC_FRONT_CENTER" << endl;
@@ -729,6 +733,8 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     // }else{
                         sendSteeringAngle((-50*M_PI)/180); //-50
                         //odcore::base::Thread::usleepFor(100000);
+                        turnCounter++;
+                        cerr <<"turnCounter: "<< turnCounter << endl;
                         //sendSteeringAngle(0);
                     //}
 
@@ -739,7 +745,8 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     int irValue = readSensorData(1);
                     cerr << "received " << irValue << " on INFRARED_FRONT_RIGHT" << endl;
 
-                    if(irValue > 0 ){ //&& readSensorData(INFRARED_FRONT_RIGHT) < 8
+                    if(irValue > 0 ){ //&& readSe
+                           
                         cerr << "### Infrared front detected object ###" << endl;
                         driveOnLeftLane = true;
                         turnToLeftLane = false;
@@ -811,7 +818,10 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
 
                         //if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
                         if(readSensorData(INFRARED_REAR_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) == 0){
-                            count++;
+                            
+                            turnCounter--;
+
+                            cerr <<"turnCounter" <<turnCounter << endl;
                             //double inf = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
                             //cerr << "Infrared rear right = " <<  inf << endl;
                             //double inf2 = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
@@ -831,9 +841,15 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                             //     getConference().send(cont1);
                             // }else{
                                 sendSteeringAngle((45*M_PI)/180); //45
-                                //odcore::base::Thread::usleepFor(200000);
+                                odcore::base::Thread::usleepFor(100000);
                                 //sendSteeringAngle(0);
                            // }
+                            if(turnCounter ==0){
+
+                            turnToRightLane = false;
+                            goForward = true;
+
+                                }
 
                         }else{
                             // if(m_simulator){
@@ -851,7 +867,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                             turnToRightLane = false;
                             goForward = true;
                             //onRightLaneTurnLeft = true;
-                            count = 0;
+                          //  count = 0;
                         }
                 }
 

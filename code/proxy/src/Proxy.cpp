@@ -142,23 +142,25 @@ namespace automotive {
 					 * Do something with the serial data
 					 * */
 					string serialInput=handler.readstr();
-					char input;
-					if(serialInput.size()>0){
-						input = serialInput.at(0);
-
-						cerr<<"Id = " << (int)((input >> 5) & 0x07) << " Value = " << (int)(input&31)*2 << endl;
-
-						//odcore::base::Lock o(overtaking);
+					//char input;
+					//if(serialInput.size()>0){ 
+						
+						for (unsigned int i = 1; i < 7; i++){
+							if(handler.get(i) != 0){
+							//input = serialInput.at(0);
+							cerr<<"Id = " << (int)((handler.get(i) >> 5) & 0x07) << " Value = " << (int)(handler.get(i)&31)*2 << endl;
+						
+						//odcore::base::Lock o(overtaking); 
 						//char *p = static_cast<char*>(overtaking->getSharedMemory());
 						//if( (int)((input >> 5) & 0x07) == 1)
 						//cerr << "input = " << (int)input << endl;
 
 						//char *p = static_cast<char*>(overtaking->getSharedMemory());
-						//cerr << "## Input = " << input << endl;
-						//if( (int)((input >> 5) & 0x07) == 1)
-						p[(int)((input >> 5) & 0x07)]=input&31;
-
-
+						//cerr << "## Input = " << input << endl;		
+						//if( (int)((input >> 5) & 0x07) == 1)			
+						p[(int)((handler.get(i) >> 5) & 0x07)]=handler.get(i)&31;
+						//}
+						}
 					}
 
 					if(p[0]!=0){
