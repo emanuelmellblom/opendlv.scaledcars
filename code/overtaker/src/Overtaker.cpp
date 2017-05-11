@@ -594,7 +594,7 @@ int32_t distance = 220; //280, 180
             bool goForward = true;
             bool driveOnLeftLane = false;
             //bool onRightLaneTurnLeft = false;
-            int count=0;
+            int turnCounter = 0;
 
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
 
@@ -673,6 +673,8 @@ int32_t distance = 220; //280, 180
                     // }else{
                         sendSteeringAngle((-50*M_PI)/180); //-50
                         //odcore::base::Thread::usleepFor(100000);
+                        turnCounter++
+                        cerr <<"turnCounter: "<< turnCounter << endl;
                         //sendSteeringAngle(0);
                     //}
 
@@ -683,7 +685,8 @@ int32_t distance = 220; //280, 180
                     int irValue = readSensorData(1);
                     cerr << "received " << irValue << " on INFRARED_FRONT_RIGHT" << endl;
 
-                    if(irValue > 0 ){ //&& readSensorData(INFRARED_FRONT_RIGHT) < 8
+                    if(irValue > 0 ){ //&& readSe
+                           
                         cerr << "### Infrared front detected object ###" << endl;
                         driveOnLeftLane = true;
                         turnToLeftLane = false;
@@ -755,7 +758,10 @@ int32_t distance = 220; //280, 180
                              
                         //if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
                         if(readSensorData(INFRARED_REAR_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) == 0){
-                            count++;
+                            
+                            turnCounter--;
+
+                            cerr <<"turnCounter" <<turnCounter << endl;
                             //double inf = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
                             //cerr << "Infrared rear right = " <<  inf << endl;
                             //double inf2 = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
@@ -778,6 +784,12 @@ int32_t distance = 220; //280, 180
                                 odcore::base::Thread::usleepFor(100000);
                                 //sendSteeringAngle(0);
                            // }
+                            if(turnCounter ==0){
+
+                            turnToRightLane = false;
+                            goForward = true;
+
+                                }
 
                         }else{
                             // if(m_simulator){
@@ -795,7 +807,7 @@ int32_t distance = 220; //280, 180
                             turnToRightLane = false;
                             goForward = true;
                             //onRightLaneTurnLeft = true;
-                            count = 0;
+                          //  count = 0;
                         }
                 }
 
