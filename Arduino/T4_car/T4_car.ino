@@ -57,6 +57,7 @@ reads a byte from serial port, current speed and angle , reads them as bytes and
 
 void byteDecode(char byteIn, float *speed, float * angle) {
   float tempAng = *angle;
+  float tempSpd = *speed;
   *angle = ((byteIn & 31) - 15) * 4;
   //Serial2.println("qwdwe  "+String(((float)((byteIn & 224) >> 5)-3)));
    //Serial2.println("abba  "+String(((float)((byteIn & 224) >> 5)-3)/2));
@@ -297,7 +298,6 @@ Serial.println("hello "+String(speedCH));
 	//Serial2.println(" delay is"+String(millis()-times));
 }
 /* proxy input is : -60 to 60 for steering angle, 5 bits of which are steering info 3 bits are ms. the frist three bytes should show the speed */
-
 
 
 
