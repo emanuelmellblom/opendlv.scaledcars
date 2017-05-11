@@ -61,7 +61,7 @@ namespace scaledcars {
     }
 
 
-	int Overtaker::readSensorData(int sensorId) {
+	int Parking::readSensorData(int sensorId) {
 		const string NAME = "sensorMemory";
 		int returnValue;
 
@@ -100,7 +100,7 @@ namespace scaledcars {
 		return returnValue;
 	}
 
-	void Overtaker::sendSteeringAngle(double steeringAngle) {
+	void Parking::sendSteeringAngle(double steeringAngle) {
 
 		cerr << "org = " << steeringAngle << endl;
 		double steeringAngleDegrees = ((steeringAngle * 180) / M_PI);
@@ -146,6 +146,7 @@ namespace scaledcars {
                 const int32_t INFRARED_FRONT_RIGHT = 5;
                 const int32_t INFRARED_REAR_RIGHT = 1;
                 //const int32_t INFRARED_BACK = 1;
+                const int32_t ODOMETER = 6;
             
             // 1. Get most recent vehicle data:
             Container containerVehicleData = getKeyValueDataStore().get(automotive::VehicleData::ID());
@@ -154,6 +155,11 @@ namespace scaledcars {
             // 2. Get most recent sensor board data describing virtual sensor data:
             Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
             SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
+            TimeStamp currentTime;
+            
+            double deltaTime = (lastTime.toMicroseconds() - currentTime.toMicroseconds()) / 1000.0;
+                    
+            lastTime = currentTime;
 
             // Create vehicle control data.
             VehicleControl vc;
@@ -170,8 +176,8 @@ namespace scaledcars {
 					// TODO: Speed
 				}
                     
-                // Get odometer value
-                currentSpaceSize += 1; // 1 to be replaced with time traveled since last check
+                // Get odometer value - probably approx in cm
+                currentSpaceSize += sbd.getValueForKey_MapOfDistances(ODOMETER) * deltaTime / 1000;
                     
                 // Check if an object is blocking the space.
                 // If it is, reset space size
@@ -189,11 +195,6 @@ namespace scaledcars {
             // Parking
             else{               
                 
-                TimeStamp currentTime;
-                    
-                // Deltatime may be used in the search state 
-                // for distance if only velocity is available
-                double deltaTime = (lastTime.toMicroseconds() - currentTime.toMicroseconds()) / 1000.0;
                 parkTimer += deltaTime;
                     
                 // If 
@@ -242,8 +243,6 @@ namespace scaledcars {
 					}
                 }
 				// Maybe move forward until front sensor detects something?
-                    
-                lastTime = currentTime;
             }
             // Create container for finally sending the data.
             Container c(vc);
