@@ -34,11 +34,12 @@ class RcCar {
 			const int minForwSpeed;
 			const int maxRevSpeed;
 			const int minRevSpeed;
+			unsigned long time;
 			int currentSpeed;
 			Servo esc;
 			Servo steering;
 			
-			void Break(int *speed);
+			bool Break(int *speed);
 			
 			
 			

@@ -4,6 +4,7 @@
 RcCar::RcCar(int maxForwSpeed,int minForwSpeed,int maxRevSpeed,int minRevSpeed, int neutral,Servo esc,Servo steeringServo):NEUTRAL(neutral), minForwSpeed(minForwSpeed),maxForwSpeed(maxForwSpeed),maxRevSpeed(maxRevSpeed),minRevSpeed(minRevSpeed){
 	this->esc=esc;
 	this->steering=steeringServo;
+	time=millis();
 }
 
 RcCar::~RcCar(){
@@ -33,15 +34,10 @@ int  RcCar::getRatio(float val){
 
 void RcCar::setSpeed(float speed){
 	int x=getRatio(speed);
-	Serial.println(x);
+	//Serial.println(x);
 	this->Break(&x);
-	for(int i =0;i<2;i++){
-		esc.write(this->NEUTRAL);
-		delay(100);
-		esc.write(x);
-		delay(100);
-	}
 	
+
 	
 	this->currentSpeed=x;
 }
@@ -56,18 +52,31 @@ void RcCar::setRawSpeed(int(*fptr)(int speed),int speed){
 
 
 
-void RcCar::Break(int* speed){
+bool RcCar::Break(int* speed){
 	if(*speed < this->minForwSpeed && this->currentSpeed > minForwSpeed){
 		esc.write(getRatio(-2));
 		delay(100);
 		esc.write(this->NEUTRAL);	
+		delay(100);
+		esc.write(*speed);
+		delay(100);
+		//Serial.println("hellow world "+String(*speed));
+		return true;
 	}
 	//Serial.println(String(this->currentSpeed)+" "+String(this->maxRevSpeed)+" "+String(this->minRevSpeed)+" ");
 	if((!(*speed <= this->minRevSpeed && *speed >= this->maxRevSpeed) &&  !(*speed >= this->minRevSpeed && *speed <= this->maxRevSpeed)) && ((this->currentSpeed >= minRevSpeed && this->currentSpeed <= maxRevSpeed) || (this->currentSpeed <= minRevSpeed && this->currentSpeed >= maxRevSpeed))){
+		
+		
 		esc.write(getRatio(2));
 		delay(100);
 		esc.write(this->NEUTRAL);
+		delay(100);
+		esc.write(*speed);
+		delay(100);
+		return true;
 	}
+	esc.write(*speed);
+	return false;
 }  
 
 
