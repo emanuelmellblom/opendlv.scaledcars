@@ -77,7 +77,7 @@ int32_t distance = 220; //280, 180
             m_previousTime(),
             m_eSum(0),
             m_eOld(0),
-            m_speed(6),
+            m_speed(4),
             m_vehicleControl() {}
 
 
@@ -731,7 +731,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     //     // Send container.
                     //     getConference().send(cont1);
                     // }else{
-                        sendSteeringAngle((-50*M_PI)/180); //-50
+                        sendSteeringAngle((-60*M_PI)/180); //-50
                         //odcore::base::Thread::usleepFor(100000);
                         turnCounter++;
                         cerr <<"turnCounter: "<< turnCounter << endl;
@@ -844,7 +844,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                                 odcore::base::Thread::usleepFor(100000);
                                 //sendSteeringAngle(0);
                            // }
-                            if(turnCounter ==0){
+                            if(turnCounter ==0 && readSensorData(INFRARED_REAR_RIGHT==0)){
 
                             turnToRightLane = false;
                             goForward = true;
