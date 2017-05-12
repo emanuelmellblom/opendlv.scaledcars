@@ -172,7 +172,7 @@ namespace scaledcars {
             SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
             TimeStamp currentTime;
             
-            double deltaTime = (lastTime.toMicroseconds() - currentTime.toMicroseconds()) / 1000.0;
+            double deltaTime = (currentTime.toMicroseconds() - lastTime.toMicroseconds()) / 1000.0;
                     
             lastTime = currentTime;
 
@@ -198,7 +198,7 @@ namespace scaledcars {
                     
                 // Check if an object is blocking the space.
                 // If it is, reset space size
-                if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 7.2 && sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) < 7.2){
+                if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 7.2 || sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) < 7.2){
                     //goForward = false;
                     cerr << "Object detected" << endl;
                     currentSpaceSize = 0;
