@@ -204,6 +204,8 @@ int32_t distance = 220; //280, 180
 
         void Overtaker::sendSteeringAngle(double steeringAngle){ //speed is between 0 and 7. 
 
+            cerr << "Original steeringAngle = " << steeringAngle << endl;
+
             //cerr << "org = " << steeringAngle << endl;
             int steeringAngleDegrees = ((steeringAngle*180)/M_PI);
             cerr << "steeringAngle = " << steeringAngleDegrees << endl;
@@ -731,7 +733,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     //     // Send container.
                     //     getConference().send(cont1);
                     // }else{
-                        sendSteeringAngle((-60*M_PI)/180); //-50
+                        sendSteeringAngle((-50*M_PI)/180); //-50
                         //odcore::base::Thread::usleepFor(100000);
                         turnCounter++;
                         cerr <<"turnCounter: "<< turnCounter << endl;
@@ -844,12 +846,12 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                                 odcore::base::Thread::usleepFor(100000);
                                 //sendSteeringAngle(0);
                            // }
-                            if(turnCounter ==0 && readSensorData(INFRARED_REAR_RIGHT==0)){
+                            if(turnCounter ==0){
 
                             turnToRightLane = false;
                             goForward = true;
 
-                                }
+                            }
 
                         }else{
                             // if(m_simulator){

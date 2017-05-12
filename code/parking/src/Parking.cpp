@@ -202,7 +202,7 @@ namespace scaledcars {
                 // If space size is big enough, start parking
                 if(currentSpaceSize > minSpaceSize){
                     state = Park;
-                    parkTimer = 1500;
+                    parkTimer = 2000;
                 }
             }
             // Parking
@@ -218,7 +218,7 @@ namespace scaledcars {
                 // Move forward a bit
 
 
-		if (parkTimer < 1700) {
+		if (parkTimer < 1500) {
 
 		cerr << "State 1" << endl;
 					/*if (m_simulator) {

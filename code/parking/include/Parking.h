@@ -47,7 +47,7 @@ namespace scaledcars {
             enum CarState { Search, Park };
             CarState state = Search;
             double currentSpaceSize = 0;
-            const double minSpaceSize = 1;
+            const double minSpaceSize = 7;
 
             private:
                 /**
