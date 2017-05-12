@@ -330,9 +330,9 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                 Canny(grey_image, grey_image, 50, 200, 3);
 
                 //standard hough line transform
-
-                vector<cv::Vec2f>lines;
-                HoughLines(grey_image, lines, 1, CV_PI/180, 100, 0,0);
+/*
+                vector<Vec2f>lines;
+                HoughLines(grey_image, lines, 1, CV_PI/180, 150, 0,0);
                    
                       for( size_t i = 0; i < lines.size(); i++ )
                               {
@@ -348,8 +348,27 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                                 line( grey_image, pt1, pt2, Scalar(255,0,0), 3, CV_AA);
                                
                                }
-                               
-                /*kad123
+              
+#else     */
+            vector<cv::Vec4i> lines;
+            HoughLinesP(grey_image, lines, 1, CV_PI/180, 5, 20, 30 );
+    
+             for( size_t i = 0; i < lines.size(); i++ )
+             {
+              
+    //          line( grey_image, Point(lines[i][0], lines[i][1]),
+      //        Point(lines[0]1], lines[2][3]), Scalar(255,0,0), 3, CV_AA);
+          Vec4i l = lines[i];
+          line( grey_image, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,0,0), 3, 8);     
+              }
+//         
+
+            //  namedWindow( "Source", 1 );
+             // imshow( "Source", grey_image);
+
+            //namedWindow( "Detected Lines", 1 );
+     //      cv::imshow( "Detected Lines", grey_image);                 
+                /*
 
                 for rho,theta in lines[0]:
                    a = np.cos(theta)
@@ -363,8 +382,8 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                
                line(img,(x1,y1),(x2,y2),(0,0,255),2) 
 */
-             imshow("source", grey_image);
-             imshow("detected lines", grey_image);
+             //imshow("source", grey_image);
+             //imshow("detected lines", grey_image);
 
 
              //  waitKey();
