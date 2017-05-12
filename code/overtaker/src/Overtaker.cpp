@@ -46,6 +46,7 @@
 
 #include "opendavinci/odcore/base/KeyValueConfiguration.h"
 #include "opendavinci/odcore/data/TimeStamp.h"
+#include  <opencv/imgproc.h>
 //----
 
 namespace scaledcars{
@@ -327,6 +328,11 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
 
                 //Apply Canny edge detection
                 Canny(grey_image, grey_image, 50, 200, 3);
+
+                vector<Vec2>lines;
+                HoughLines(grey_image, lines, 1, CV_PI/180, 100, 0,0);
+                
+                
 
                 // vector<vector<cv::Point> > contours;
                 // vector<cv::Vec4i> hierarchy;
