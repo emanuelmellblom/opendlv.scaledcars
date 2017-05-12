@@ -119,8 +119,6 @@ namespace scaledcars {
 
 		// Speed must be 0 - 7
 		output |= (speed & 7) << 5;
-		
-		cerr << "Out: " << (int)output << endl;
 
 		const string NAME = "sensorMemory";
 		try {
@@ -190,7 +188,7 @@ namespace scaledcars {
                 // If it is, reset space size
                 int rear = readSensorData(INFRARED_REAR_RIGHT);
                 int front = readSensorData(INFRARED_FRONT_RIGHT);
-                if((rear < 10 && rear != 0) || (front < 10 && front != 0)){
+                if(rear < 13 || front < 13){
                     cerr << "Object detected" << endl;
                     currentSpaceSize = 0;
 
@@ -234,14 +232,14 @@ namespace scaledcars {
 					// }
                 }
                 // Backwards, steering wheel to the right.
-                else if (parkTimer < 5000) {
+                else if (parkTimer < 4000) {
 		cerr << "State 2" << endl;
 					/*if (m_simulator) {
 						vc.setSpeed(-2);
 						vc.setSteeringWheelAngle(90);
 					}
 					else {*/
-						sendMotionData(90, 2);
+						sendMotionData(-60, 2);
 						// sendSpeed(-2)
 					// }
                 }
@@ -252,12 +250,12 @@ namespace scaledcars {
 						vc.setSteeringWheelAngle(-90);
 					}
 					else {*/
-						sendMotionData(-30, 2);
+						sendMotionData(60, 2);
 						// sendSpeed(-2)
 					// }
                 }
                 // Finally, stop again
-                else if (parkTimer < 3000) {
+                else if (parkTimer < 6000) {
 		cerr << "State 4" << endl;
 					// if (m_simulator) {
 					// 	vc.setSpeed(0);
