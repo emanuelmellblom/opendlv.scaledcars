@@ -61,7 +61,7 @@ namespace scaledcars{
 //NEW FROM LANEFOLLOWER
 using namespace odcore::data::image;
 double steering;
-int32_t distance = 220; //280, 180
+int32_t distance = 180; //280, 180
 //------
 
 
@@ -77,7 +77,7 @@ int32_t distance = 220; //280, 180
             m_previousTime(),
             m_eSum(0),
             m_eOld(0),
-            m_speed(6),
+            m_speed(4),
             m_vehicleControl() {}
 
 
@@ -203,6 +203,8 @@ int32_t distance = 220; //280, 180
         }
 
         void Overtaker::sendSteeringAngle(double steeringAngle){ //speed is between 0 and 7. 
+
+            cerr << "Original steeringAngle = " << steeringAngle << endl;
 
             //cerr << "org = " << steeringAngle << endl;
             int steeringAngleDegrees = ((steeringAngle*180)/M_PI);
@@ -696,7 +698,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                 //Check for object Simulator
                 //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
 
-                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 50 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 40 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
                     cerr << "### Object detected ###" << endl;
                     //double ulValue = readSensorData(ULTRASONIC_FRONT_CENTER);
                     //cerr << "received " << ulValue << " on ULTRASONIC_FRONT_CENTER" << endl;
@@ -817,9 +819,11 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     //double v = sbd.getValueForKey_MapOfDistances(ULTRASONIC_REAR_RIGHT)
 
                         //if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
-                        if(readSensorData(INFRARED_REAR_RIGHT) > 0 && readSensorData(INFRARED_FRONT_RIGHT) == 0){
-
-                            turnCounter--;
+                        if((readSensorData(INFRARED_REAR_RIGHT) > 0 || readSensorData(INFRARED_FRONT_RIGHT) == 0) && turnToRightLane > 0){
+                        //if(turnCounter > 0){
+                            if(turnCounter>0){
+                                turnCounter--;
+                            }
 
                             cerr <<"turnCounter" <<turnCounter << endl;
                             //double inf = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
@@ -845,13 +849,12 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                                 //sendSteeringAngle(0);
                            // }
                             if(turnCounter ==0){
-
-                            turnToRightLane = false;
-                            goForward = true;
-
-                                }
+                                turnToRightLane = false;
+                                goForward = true;
+                            }
 
                         }else{
+                            cerr << "Not in if statement" << endl;
                             // if(m_simulator){
                             //     vc.setSpeed(1);
                             //     vc.setSteeringWheelAngle((-45*M_PI)/180); //-45
@@ -860,12 +863,12 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                             //     getConference().send(cont2);
                             //     odcore::base::Thread::usleepFor(90000);
                             // }else{
-                                sendSteeringAngle((-45*M_PI)/180); //-45
+                                sendSteeringAngle((45*M_PI)/180); //-45
                                 odcore::base::Thread::usleepFor(90000);
                             //}
 
-                            turnToRightLane = false;
-                            goForward = true;
+                            //turnToRightLane = false;
+                            //goForward = true;
                             //onRightLaneTurnLeft = true;
                           //  count = 0;
                         }
@@ -875,6 +878,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                      //turnToRightLane = false;
                     //goForward = false;
                     cerr << "### Go forward again ###" << endl;
+                    turnCounter = 0;
 
                     // if(m_simulator){
                     //     vc.setSpeed(1);
