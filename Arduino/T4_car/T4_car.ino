@@ -195,10 +195,12 @@ void loop() {
 		// Get speed since last iteration
 		
 		//lastDist = dist;
-		//lastTime = times;
+		lastTime = times;
 		
 		//SensorData[5] = ((spd/2) & 31) | (6 << 5);
 		SensorData[6] = ((dist-lastDist) & 31) | (6 << 5);
+		//if(dist-lastDist!=0)
+		//Serial.println(dist-lastDist);
 		lastDist=dist;
     }
 
