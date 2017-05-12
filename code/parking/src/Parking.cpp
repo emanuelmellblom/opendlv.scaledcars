@@ -191,16 +191,17 @@ namespace scaledcars {
                     
                 // Check if an object is blocking the space.
                 // If it is, reset space size
-                if(readSensorData(INFRARED_FRONT_RIGHT) < 7.2 || readSensorData(INFRARED_REAR_RIGHT) < 7.2){
-                    //goForward = false;
+                int rear = readSensorData(INFRARED_REAR_RIGHT);
+                int front = readSensorData(INFRARED_FRONT_RIGHT);
+                if(rear < 13 || front < 13){
                     cerr << "Object detected" << endl;
                     currentSpaceSize = 0;
 
                 }
                 
                 
-                    cerr << "Back IR: " << readSensorData(INFRARED_REAR_RIGHT) << endl;
-                    cerr << "Front IR: " << readSensorData(INFRARED_FRONT_RIGHT) << endl;
+                    cerr << "Back IR: " << rear << endl;
+                    cerr << "Front IR: " << front << endl;
                     
                 // If space size is big enough, start parking
                 if(currentSpaceSize > minSpaceSize){
