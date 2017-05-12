@@ -190,7 +190,7 @@ namespace scaledcars {
                 // If it is, reset space size
                 int rear = readSensorData(INFRARED_REAR_RIGHT);
                 int front = readSensorData(INFRARED_FRONT_RIGHT);
-                if(rear < 13 || front < 13){
+                if((rear < 10 && rear != 0) || (front < 10 && front != 0)){
                     cerr << "Object detected" << endl;
                     currentSpaceSize = 0;
 
