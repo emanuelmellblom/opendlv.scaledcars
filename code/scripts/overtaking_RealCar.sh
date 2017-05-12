@@ -16,7 +16,7 @@ sleep 3
 #sleep 3
 
 #Cameraproxy 2
-xterm -hold -e "docker run -ti --rm --net=host --ipc=host --group-add video --device=/dev/video0:/dev/video0 seresearch/opendlv-core-on-opendavinci-ubuntu-16.04-complete:latest /opt/opendlv.core/bin/opendlv-core-system-proxy-camera --cid=111 --freq=20" &
+xterm -hold -e "docker run -ti --rm --net=host --ipc=host --group-add video --device=/dev/video1:/dev/video1 seresearch/opendlv-core-on-opendavinci-ubuntu-16.04-complete:latest /opt/opendlv.core/bin/opendlv-core-system-proxy-camera --cid=111 --freq=20" &
 sleep 3
 
 #Sensor Proxy
