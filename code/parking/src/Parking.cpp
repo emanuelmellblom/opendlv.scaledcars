@@ -162,14 +162,7 @@ namespace scaledcars {
                 const int32_t INFRARED_REAR_RIGHT = 1;
                 //const int32_t INFRARED_BACK = 1;
                 const int32_t ODOMETER = 6;
-            
-            // 1. Get most recent vehicle data:
-            //Container containerVehicleData = getKeyValueDataStore().get(automotive::VehicleData::ID());
-            //VehicleData vd = containerVehicleData.getData<VehicleData> ();
 
-            // 2. Get most recent sensor board data describing virtual sensor data:
-            Container containerSensorBoardData = getKeyValueDataStore().get(automotive::miniature::SensorBoardData::ID());
-            SensorBoardData sbd = containerSensorBoardData.getData<SensorBoardData> ();
             TimeStamp currentTime;
             
             double deltaTime = (currentTime.toMicroseconds() - lastTime.toMicroseconds()) / 1000.0;
@@ -194,11 +187,11 @@ namespace scaledcars {
 				//}
                     
                 // Get odometer value - probably approx in cm
-                currentSpaceSize += sbd.getValueForKey_MapOfDistances(ODOMETER) * deltaTime / 1000;
+                currentSpaceSize += readSensorData(ODOMETER) * deltaTime / 1000;
                     
                 // Check if an object is blocking the space.
                 // If it is, reset space size
-                if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 7.2 || sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) < 7.2){
+                if(readSensorData(INFRARED_FRONT_RIGHT) < 7.2 && readSensorData(INFRARED_REAR_RIGHT) < 7.2){
                     //goForward = false;
                     cerr << "Object detected" << endl;
                     currentSpaceSize = 0;
