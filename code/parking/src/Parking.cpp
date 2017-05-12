@@ -179,8 +179,11 @@ namespace scaledcars {
             // Create vehicle control data.
             VehicleControl vc;
 
+		cerr << "delta: " << deltaTime << endl;
+
             // Moving state machine.
             if (state == Search) {
+		cerr << "Searching" << endl;
                 // Go forward.
 				/*if (m_simulator) {
 					vc.setSpeed(1);
@@ -199,6 +202,7 @@ namespace scaledcars {
                     //goForward = false;
                     cerr << "Object detected" << endl;
                     currentSpaceSize = 0;
+
                 }
                     
                 // If space size is big enough, start parking
@@ -210,11 +214,16 @@ namespace scaledcars {
             else{               
                 
                 parkTimer += deltaTime;
+
+
+		cerr << "Parking. Park timer: " << parkTimer << endl;
                     
                 // If 
                             
                 // Stop completely
                 if (parkTimer < 1000) {
+
+		cerr << "State 1" << endl;
 					/*if (m_simulator) {
 						vc.setSpeed(0);
 						vc.setSteeringWheelAngle(0);
@@ -226,6 +235,7 @@ namespace scaledcars {
                 }
                 // Backwards, steering wheel to the right.
                 else if (parkTimer < 2000) {
+		cerr << "State 2" << endl;
 					/*if (m_simulator) {
 						vc.setSpeed(-2);
 						vc.setSteeringWheelAngle(90);
@@ -236,6 +246,7 @@ namespace scaledcars {
 					// }
                 }
                 else if (parkTimer < 3000) {
+		cerr << "State 3" << endl;
 					/*if (m_simulator) {
 						vc.setSpeed(-2);
 						vc.setSteeringWheelAngle(-90);
@@ -247,6 +258,7 @@ namespace scaledcars {
                 }
                 // Finally, stop again
                 else if (parkTimer < 4000) {
+		cerr << "State 4" << endl;
 					// if (m_simulator) {
 					// 	vc.setSpeed(0);
 					// 	vc.setSteeringWheelAngle(0);
