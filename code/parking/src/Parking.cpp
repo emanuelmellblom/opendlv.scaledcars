@@ -88,25 +88,20 @@ namespace scaledcars {
 			if (sharedMemory->isValid()) {
 				uint32_t counter = 30;
 				while (counter-- > 0) {
-					int id;
 					int value;
 					{
 						// Using a scoped lock to lock and automatically unlock a shared memory segment.
 						odcore::base::Lock l(sharedMemory);
 						char *p = static_cast<char*>(sharedMemory->getSharedMemory());
 
-						//Extract the sensor ID from the received byte
-						id = p[sensorId] >> 5 & 0x03;
 						//Extract the sensor value from the received byte
-						value = p[sensorId] & 31;
+						value = (p[sensorId] & 31) * 2;
 					}
-					if (id == sensorId) {
-						returnValue = value;
-						break;
-					}
+					returnValue = value;
+					
+					break;
 					// Sleep some time.
 					//const uint32_t ONE_SECOND = 1000 * 1000;
-					odcore::base::Thread::usleepFor(1000);
 				}
 			}
 		}
