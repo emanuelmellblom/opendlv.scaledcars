@@ -118,7 +118,9 @@ namespace scaledcars {
 		output = (((int)(steeringAngle) / 4) + 15) & 31;
 
 		// Speed must be 0 - 7
-		output |= speed << 5;
+		output |= (speed & 7) << 5;
+		
+		cerr << "Out: " << (int)output << endl;
 
 		const string NAME = "sensorMemory";
 		try {
