@@ -178,7 +178,7 @@ namespace scaledcars {
 					vc.setSteeringWheelAngle(0);
 				}
 				else {*/
-					sendMotionData(0, 4);
+					sendMotionData(10, 6);
 				//}
                     
                 // Get odometer value - probably approx in cm
@@ -198,9 +198,11 @@ namespace scaledcars {
                     cerr << "Back IR: " << rear << endl;
                     cerr << "Front IR: " << front << endl;
                     
+                    cerr << "Space size: " << currentSpaceSize << endl;
                 // If space size is big enough, start parking
                 if(currentSpaceSize > minSpaceSize){
                     state = Park;
+                    parkTimer = 1500;
                 }
             }
             // Parking
@@ -214,12 +216,9 @@ namespace scaledcars {
                 // If 
                             
                 // Move forward a bit
-                if(parkTimer < 1000){
-		cerr << "State 0" << endl;
-                    sendMotionData(0, 4);
-                }
-                // Stop completely
-                else if (parkTimer < 3000) {
+
+
+		if (parkTimer < 1700) {
 
 		cerr << "State 1" << endl;
 					/*if (m_simulator) {
@@ -227,42 +226,55 @@ namespace scaledcars {
 						vc.setSteeringWheelAngle(0);
 					}
 					else {*/
-						sendMotionData(0, 3);
+						sendMotionData(6, 4);
+						// sendSpeed(0)
+					// }
+                }
+
+		else if (parkTimer < 3000) {
+
+		cerr << "State 1" << endl;
+					/*if (m_simulator) {
+						vc.setSpeed(0);
+						vc.setSteeringWheelAngle(0);
+					}
+					else {*/
+						sendMotionData(6, 3);
 						// sendSpeed(0)
 					// }
                 }
                 // Backwards, steering wheel to the right.
-                else if (parkTimer < 4500) {
+                else if (parkTimer < 4600) {
 		cerr << "State 2" << endl;
 					/*if (m_simulator) {
 						vc.setSpeed(-2);
 						vc.setSteeringWheelAngle(90);
 					}
 					else {*/
-						sendMotionData(60, 2);
+						sendMotionData(55, 0);
 						// sendSpeed(-2)
 					// }
                 }
-                else if (parkTimer < 6000) {
+                else if (parkTimer < 7500) {
 		cerr << "State 3" << endl;
 					/*if (m_simulator) {
 						vc.setSpeed(-2);
 						vc.setSteeringWheelAngle(-90);
 					}
 					else {*/
-						sendMotionData(-60, 2);
+						sendMotionData(-55, 0);
 						// sendSpeed(-2)
 					// }
                 }
                 // Finally, stop again
-                else if (parkTimer < 7500) {
+                else if (parkTimer < 9000) {
 		cerr << "State 4" << endl;
 					// if (m_simulator) {
 					// 	vc.setSpeed(0);
 					// 	vc.setSteeringWheelAngle(0);
 					// }
 					// else {
-						sendMotionData(0, 3);
+						sendMotionData(6, 3);
 						// sendSpeed(0)
 					// }
                 }
