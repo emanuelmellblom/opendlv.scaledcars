@@ -46,11 +46,11 @@
 
 #include "opendavinci/odcore/base/KeyValueConfiguration.h"
 #include "opendavinci/odcore/data/TimeStamp.h"
-#include  <opencv/imgproc.h>
+//#include  <opencv/imgproc.h>
 //----
 
 namespace scaledcars{
-
+    using namespace cv;
     using namespace std;
     using namespace odcore::base;
     using namespace odcore::data;
@@ -329,10 +329,47 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                 //Apply Canny edge detection
                 Canny(grey_image, grey_image, 50, 200, 3);
 
-                vector<Vec2>lines;
+                //standard hough line transform
+
+                vector<cv::Vec2f>lines;
                 HoughLines(grey_image, lines, 1, CV_PI/180, 100, 0,0);
-                
-                
+                   
+                      for( size_t i = 0; i < lines.size(); i++ )
+                              {
+
+                                double rho = lines[i][0], theta = lines[i][1];
+                                Point pt1, pt2;
+                                double a = cos(theta), b = sin(theta);
+                                double x0 = a*rho, y0 = b*rho;
+                                pt1.x = cvRound(x0 + 1000*(-b));
+                                pt1.y = cvRound(y0 + 1000*(a));
+                                pt2.x = cvRound(x0 - 1000*(-b));
+                                pt2.y = cvRound(y0 - 1000*(a));
+                                line( grey_image, pt1, pt2, Scalar(255,0,0), 3, CV_AA);
+                               
+                               }
+                               
+                /*kad123
+
+                for rho,theta in lines[0]:
+                   a = np.cos(theta)
+                   b = np.sin(theta)
+                   x0 = a*rho
+                   y0 = b*rho
+                   x1 = int(x0 + 1000*(-b))
+                   y1 = int(y0 + 1000*(a))
+                   x2 = int(x0 - 1000*(-b))
+                   y2 = int(y0 - 1000*(a))
+               
+               line(img,(x1,y1),(x2,y2),(0,0,255),2) 
+*/
+             imshow("source", grey_image);
+             imshow("detected lines", grey_image);
+
+
+             //  waitKey();
+            //}
+
 
                 // vector<vector<cv::Point> > contours;
                 // vector<cv::Vec4i> hierarchy;
