@@ -191,12 +191,16 @@ namespace scaledcars {
                     
                 // Check if an object is blocking the space.
                 // If it is, reset space size
-                if(readSensorData(INFRARED_FRONT_RIGHT) < 7.2 && readSensorData(INFRARED_REAR_RIGHT) < 7.2){
+                if(readSensorData(INFRARED_FRONT_RIGHT) < 7.2 || readSensorData(INFRARED_REAR_RIGHT) < 7.2){
                     //goForward = false;
                     cerr << "Object detected" << endl;
                     currentSpaceSize = 0;
 
                 }
+                
+                
+                    cerr << "Back IR: " << readSensorData(INFRARED_REAR_RIGHT) << endl;
+                    cerr << "Front IR: " << readSensorData(INFRARED_FRONT_RIGHT) << endl;
                     
                 // If space size is big enough, start parking
                 if(currentSpaceSize > minSpaceSize){
@@ -213,8 +217,13 @@ namespace scaledcars {
                     
                 // If 
                             
+                // Move forward a bit
+                if(parkTimer < 1000){
+		cerr << "State 0" << endl;
+                    sendMotionData(0, 4);
+                }
                 // Stop completely
-                if (parkTimer < 1000) {
+                else if (parkTimer < 3000) {
 
 		cerr << "State 1" << endl;
 					/*if (m_simulator) {
@@ -227,7 +236,7 @@ namespace scaledcars {
 					// }
                 }
                 // Backwards, steering wheel to the right.
-                else if (parkTimer < 2000) {
+                else if (parkTimer < 5000) {
 		cerr << "State 2" << endl;
 					/*if (m_simulator) {
 						vc.setSpeed(-2);
@@ -238,7 +247,7 @@ namespace scaledcars {
 						// sendSpeed(-2)
 					// }
                 }
-                else if (parkTimer < 3000) {
+                else if (parkTimer < 5000) {
 		cerr << "State 3" << endl;
 					/*if (m_simulator) {
 						vc.setSpeed(-2);
@@ -250,7 +259,7 @@ namespace scaledcars {
 					// }
                 }
                 // Finally, stop again
-                else if (parkTimer < 4000) {
+                else if (parkTimer < 3000) {
 		cerr << "State 4" << endl;
 					// if (m_simulator) {
 					// 	vc.setSpeed(0);
