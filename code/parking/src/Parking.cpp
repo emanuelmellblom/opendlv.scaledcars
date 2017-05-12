@@ -188,7 +188,7 @@ namespace scaledcars {
                 // If it is, reset space size
                 int rear = readSensorData(INFRARED_REAR_RIGHT);
                 int front = readSensorData(INFRARED_FRONT_RIGHT);
-                if(rear < 13 || front < 13){
+                if((rear < 10 && rear != 0) || (front < 10 && front != 0)){ 
                     cerr << "Object detected" << endl;
                     currentSpaceSize = 0;
 
@@ -232,30 +232,30 @@ namespace scaledcars {
 					// }
                 }
                 // Backwards, steering wheel to the right.
-                else if (parkTimer < 4000) {
+                else if (parkTimer < 4500) {
 		cerr << "State 2" << endl;
 					/*if (m_simulator) {
 						vc.setSpeed(-2);
 						vc.setSteeringWheelAngle(90);
 					}
 					else {*/
-						sendMotionData(-60, 2);
+						sendMotionData(60, 2);
 						// sendSpeed(-2)
 					// }
                 }
-                else if (parkTimer < 5000) {
+                else if (parkTimer < 6000) {
 		cerr << "State 3" << endl;
 					/*if (m_simulator) {
 						vc.setSpeed(-2);
 						vc.setSteeringWheelAngle(-90);
 					}
 					else {*/
-						sendMotionData(60, 2);
+						sendMotionData(-60, 2);
 						// sendSpeed(-2)
 					// }
                 }
                 // Finally, stop again
-                else if (parkTimer < 6000) {
+                else if (parkTimer < 7500) {
 		cerr << "State 4" << endl;
 					// if (m_simulator) {
 					// 	vc.setSpeed(0);
