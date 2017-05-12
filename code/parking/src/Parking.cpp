@@ -118,11 +118,9 @@ namespace scaledcars {
 
 	void Parking::sendMotionData(double steeringAngle, int speed) {
 
-		cerr << "org = " << steeringAngle << endl;
-		double steeringAngleDegrees = ((steeringAngle * 180) / M_PI);
-		cerr << "steeringAngle = " << steeringAngleDegrees << endl;
+		cerr << "steeringAngle = " << steeringAngle << endl;
 		char output = 0x00;
-		output = (((int)(steeringAngleDegrees) / 4) + 15) & 31;
+		output = (((int)(steeringAngle) / 4) + 15) & 31;
 
 		// Speed must be 0 - 7
 		output |= speed << 5;
