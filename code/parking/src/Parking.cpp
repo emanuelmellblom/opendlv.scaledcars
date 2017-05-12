@@ -190,7 +190,7 @@ namespace scaledcars {
 					vc.setSteeringWheelAngle(0);
 				}
 				else {*/
-					sendMotionData(0, 3.5);
+					sendMotionData(0, 4);
 				//}
                     
                 // Get odometer value - probably approx in cm
@@ -241,7 +241,7 @@ namespace scaledcars {
 						vc.setSteeringWheelAngle(90);
 					}
 					else {*/
-						sendMotionData(90, 2.5);
+						sendMotionData(90, 2);
 						// sendSpeed(-2)
 					// }
                 }
@@ -252,7 +252,7 @@ namespace scaledcars {
 						vc.setSteeringWheelAngle(-90);
 					}
 					else {*/
-						sendMotionData(-30, 2.5);
+						sendMotionData(-30, 2);
 						// sendSpeed(-2)
 					// }
                 }
