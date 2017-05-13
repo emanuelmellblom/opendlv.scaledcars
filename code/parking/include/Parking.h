@@ -97,10 +97,11 @@ namespace scaledcars {
             private:
                 vector<double> m_foundGaps;
                 bool m_simulator;
+                
+				char readOdometer();
+				int readSensorData(int sensorId);
 
-		int readSensorData(int sensorId);
-
-		void sendMotionData(double steeringAngle, int speed);
+				void sendMotionData(double steeringAngle, int speed);
         };
 
 }

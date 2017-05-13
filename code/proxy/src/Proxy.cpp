@@ -84,6 +84,12 @@ namespace automotive {
 			try{
 				laneFollower = std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("1", BUFFER_SIZE));
 				overtaking = std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("sensorMemory", BUFFER_SIZE));
+				{
+					odcore::base::Lock o(overtaking);
+					char *p = static_cast<char*>(overtaking->getSharedMemory());
+					for(int i =0;i<BUFFER_SIZE;i++) 
+						p[i]=0;
+				}
 				std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::createSharedMemory("dsads", 10));
 				if (overtaking->isValid()) {
 					cerr<<"valid memory \n";

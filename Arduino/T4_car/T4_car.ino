@@ -2,6 +2,7 @@
 #include <Servo.h>
 #include <SharpIR.h>
 #include <Smartcar.h>
+#include "FastLED.h"
 //#include <QTRSensors.h>
 #include <RcCar.h>
 //#include <math.h>
@@ -16,7 +17,9 @@
 
 
 //Led lights
+#define NUM_LEDS 8
 #define led_lights 9
+CRGB leds[NUM_LEDS];
 
 //Odometer
 #define odometer 3
@@ -108,7 +111,7 @@ void setup() {
 	Wire.begin(); // I2C comms
 	encoder.begin();
 	//Serial
-	Serial2.begin(9600);
+	//Serial2.begin(9600);
 	Serial.begin(9600);
 	//Serial.println("g");
 	car->setSpeed(0);
@@ -153,6 +156,11 @@ char SensorData[7] = {0, 0, 0, 0, 0, 0, 0};
 
 void loop() {
 		//tick=millis();
+
+		FastLED.addLeds<WS2811, led_lights, RGB>(leds, NUM_LEDS);
+		leds[0] = CRGB::Yellow;
+     	 leds[4] = CRGB::Green;
+		 FastLED.show();
 
 		Wire.beginTransmission(I2C[sensorId]);
 		Wire.write(0x02); // setthe measuring distance in the register two then puts a value to the register
@@ -258,7 +266,7 @@ void loop() {
 		
 	unsigned int speedCH = pulseIn(speedPin, HIGH);
 
-	Serial2.println(steeringCH);
+	//Serial2.println(steeringCH);
 /* reading from proxy and bluetooth feedback */
 	if (Serial.available()) {
 		char k = Serial.read();
@@ -266,7 +274,7 @@ void loop() {
 			byteDecode(k, &speeds, &angle);
 			//Serial2.println("inputs is "+String((int)k));
 			
-			Serial2.println("angle is"+String(angle));
+			//Serial2.println("angle is"+String(angle));
 			//Serial2.println("speed is"+String(speeds));
 			car->setAngle(angle+100);
 		}
@@ -283,7 +291,7 @@ void loop() {
 			//car->setSpeed(0);
 		}
 		//car->setRawSpeed(&speedLimit, speedCH);
-		Serial2.println(ping);
+		//Serial2.println(ping);
 		if(ping){
 			//Serial2.println(speedCH);
 			car->setRawSpeed(&speedLimit, speedCH);
@@ -303,7 +311,7 @@ void loop() {
 		ping=false;
 		car->setAngle(100);
 	}
-	Serial2.println(" delay is"+String(millis()-times));
+	//Serial2.println(" delay is"+String(millis()-times));
 }
 /* proxy input is : -60 to 60 for steering angle, 5 bits of which are steering info 3 bits are ms. the frist three bytes should show the speed */
 
