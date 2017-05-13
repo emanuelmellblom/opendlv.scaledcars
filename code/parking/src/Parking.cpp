@@ -75,6 +75,26 @@ namespace scaledcars {
     void Parking::tearDown() {
         // This method will be call automatically _after_ return from body().
     }
+    
+    
+    char Parking::readOdometer(){
+		
+		try {
+			std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory("odoMem"));
+			if (sharedMemory->isValid()) {
+				odcore::base::Lock l(sharedMemory);
+				char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+				char temp=p[0];
+				p[0]=0;
+				return temp;
+			}
+		}catch (string &exception) {
+			cerr << "Sensor memory could not created: " << exception << endl;
+		}
+		
+		return 0;
+	
+	}
 
 
 	int Parking::readSensorData(int sensorId) {
@@ -148,7 +168,7 @@ namespace scaledcars {
         // Measured in milliseconds
         double parkTimer = 0;
         TimeStamp lastTime;
-        
+        unsigned long m=0;
         while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
             
                 //const int32_t ULTRASONIC_FRONT_CENTER = 2;
@@ -157,6 +177,10 @@ namespace scaledcars {
                 const int32_t INFRARED_REAR_RIGHT = 1;
                 //const int32_t INFRARED_BACK = 1;
                 const int32_t ODOMETER = 6;
+                
+                m+=readOdometer();
+                
+                cerr<<" distance is "<<m*2.15<<endl;
 
             TimeStamp currentTime;
             
