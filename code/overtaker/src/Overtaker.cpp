@@ -79,6 +79,7 @@ int32_t distance = 180; //280, 180
             m_eSum(0),
             m_eOld(0),
             m_speed(4),
+            m_stopline(false),
             m_vehicleControl() {}
 
 
@@ -203,7 +204,7 @@ int32_t distance = 180; //280, 180
             return returnValue;
         }
 
-        void Overtaker::sendSteeringAngle(double steeringAngle){ //speed is between 0 and 7. 
+        void Overtaker::sendSteeringAngle(double steeringAngle, int speed){ //speed is between 0 and 7. 
 
             cerr << "Original steeringAngle = " << steeringAngle << endl;
 
@@ -213,7 +214,7 @@ int32_t distance = 180; //280, 180
             //char output = 0x00;
 
             char output = ((int)(round(steeringAngleDegrees/4))+15)& 31;
-            output |= m_speed << 5;
+            output |= speed << 5;
             //m_speed
             //char output = ((29/4)+15)& 31;
             cerr << "Output steering = " << (int)output << endl;
@@ -463,6 +464,55 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                         break;
                     }
                 }
+
+                /*
+                 * ############### NEW TEST WITH STOPLINE ####################
+                */
+
+                CvPoint leftStopPoint, rightStopPoint;
+                CvScalar leftPixel, rightPixel;
+
+                int leftDetectDistance = 0;
+                int rightDetectDistance = 0;
+                int leftOffset = (temp->width/2)-50;
+                int rightOffset = (temp->width/2)+50;
+
+                leftStopPoint.x = leftOffset;
+                leftStopPoint.y = CONTROL_SCANLINE;
+
+                rightStopPoint.x = rightOffset;
+                rightStopPoint.y = CONTROL_SCANLINE;
+
+                //Find potential stopline pixels
+                for (int i = 0; i < CONTROL_SCANLINE; i++){
+                    leftPixel = cvGet2D(temp, leftOffset, i);
+                    if(leftPixel.val[0] >= 200){
+                        leftStopPoint.y = i;
+                        leftDetectDistance = leftStopPoint.y;
+                        break;
+                    } 
+                }
+
+                for (int i = 0; i < CONTROL_SCANLINE; i++){
+                    rightPixel = cvGet2D(temp, rightOffset, i);
+                    if(rightPixel.val[0] >= 200){
+                        rightStopPoint.y = i;
+                        rightDetectDistance = rightStopPoint.y;
+                        break;
+                    } 
+                }
+
+                //Check the potential stopline line by using a range
+                int range = 10;
+                if((leftDetectDistance - rightDetectDistance > -range) && (leftDetectDistance - rightDetectDistance < range) && (leftDetectDistance+rightDetectDistance/2 < 250)){
+                    m_stopline = true;
+                }else{
+                    m_stopline = false;
+                }
+
+                /*
+                * ################ END OF TEST WITH STOPLINE ################# 
+                */
 
                 //TEST VOTING Find correct poits detected ---------------------------------------
                 //Right Lane
@@ -739,6 +789,10 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     processImage();
                 }
 
+                if(m_stopline){
+                    sendSteeringAngle(steering, 3);
+                }
+
                 // 1. Get most recent vehicle data:
 
                 // if(m_simulator){
@@ -769,7 +823,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     //     vc.setSpeed(1);
                     //     vc.setSteeringWheelAngle((-60*M_PI)/180); //-60
                     // }else{
-                        sendSteeringAngle((-60*M_PI)/180);  //-60
+                        sendSteeringAngle((-60*M_PI)/180, m_speed);  //-60
                     //}
 
                     turnToLeftLane = true;
@@ -795,7 +849,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     //     // Send container.
                     //     getConference().send(cont1);
                     // }else{
-                        sendSteeringAngle((-50*M_PI)/180); //-50
+                        sendSteeringAngle((-50*M_PI)/180, m_speed); //-50
                         //odcore::base::Thread::usleepFor(100000);
                         turnCounter++;
                         cerr <<"turnCounter: "<< turnCounter << endl;
@@ -850,7 +904,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                         //     // Send container.
                         //     getConference().send(com);
                         // }else{
-                            sendSteeringAngle(steering);
+                            sendSteeringAngle(steering, m_speed);
                         //}
 
                         //if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT)<0){
@@ -906,7 +960,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                             //     // Send container.
                             //     getConference().send(cont1);
                             // }else{
-                                sendSteeringAngle((45*M_PI)/180); //45
+                                sendSteeringAngle((45*M_PI)/180, m_speed); //45
                                 odcore::base::Thread::usleepFor(100000);
                                 //sendSteeringAngle(0);
                            // }
@@ -925,7 +979,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                             //     getConference().send(cont2);
                             //     odcore::base::Thread::usleepFor(90000);
                             // }else{
-                                sendSteeringAngle((45*M_PI)/180); //-45
+                                sendSteeringAngle((45*M_PI)/180, m_speed); //-45
                                 odcore::base::Thread::usleepFor(90000);
                             //}
 
@@ -947,7 +1001,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     //     vc.setSteeringWheelAngle(steering);
                     // }else{
                         //cerr << "styr" << steering <<endl;
-                        sendSteeringAngle(steering);
+                        sendSteeringAngle(steering, m_speed);
 
                    // }
                 }
