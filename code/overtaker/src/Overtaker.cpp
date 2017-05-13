@@ -351,6 +351,13 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                                }
               
 #else     */
+
+
+      
+
+        /*
+        * ######################## Hough Lines Working ###########################
+        */
             vector<cv::Vec4i> lines;
             HoughLinesP(grey_image, lines, 1, CV_PI/180, 5, 20, 30 );
     
@@ -362,7 +369,12 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
           Vec4i l = lines[i];
           line( grey_image, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,0,0), 3, 8);     
               }
-//         
+         
+        /*
+        * ################### END Hough lines Working ###########################
+        */ 
+
+    
 
             //  namedWindow( "Source", 1 );
              // imshow( "Source", grey_image);
@@ -466,52 +478,57 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                 }
 
                 /*
-                 * ############### NEW TEST WITH STOPLINE ####################
+                 * ############### CHECK STOPLINE ####################
                 */
-
+                if(y == 392){
                 CvPoint leftStopPoint, rightStopPoint;
                 CvScalar leftPixel, rightPixel;
 
-                int leftDetectDistance = 0;
-                int rightDetectDistance = 0;
                 int leftOffset = (temp->width/2)-50;
                 int rightOffset = (temp->width/2)+50;
 
                 leftStopPoint.x = leftOffset;
-                leftStopPoint.y = CONTROL_SCANLINE;
+                leftStopPoint.y = 0;
 
                 rightStopPoint.x = rightOffset;
-                rightStopPoint.y = CONTROL_SCANLINE;
+                rightStopPoint.y = 0;
 
-                //Find potential stopline pixels
-                for (int i = 0; i < CONTROL_SCANLINE; i++){
-                    leftPixel = cvGet2D(temp, leftOffset, i);
+                //Find potential stopline pixels at left offset
+                for (int i = temp->height-12; i > CONTROL_SCANLINE-40; i--){
+                    leftPixel = cvGet2D(temp, i, leftOffset);
                     if(leftPixel.val[0] >= 200){
                         leftStopPoint.y = i;
-                        leftDetectDistance = leftStopPoint.y;
                         break;
-                    } 
+                    }
                 }
-
-                for (int i = 0; i < CONTROL_SCANLINE; i++){
-                    rightPixel = cvGet2D(temp, rightOffset, i);
+                
+                //Find potential stopline pixel at right offset
+                for (int i = temp->height-12; i > CONTROL_SCANLINE-40; i--){
+                    rightPixel = cvGet2D(temp, i, rightOffset);
                     if(rightPixel.val[0] >= 200){
                         rightStopPoint.y = i;
-                        rightDetectDistance = rightStopPoint.y;
                         break;
-                    } 
+                    }
+                }
+
+                if(m_debug){
+                    //cerr << "****** Stopline Distance = " << ((temp->height-8)-leftStopPoint.y) + ((temp->height-8)-rightStopPoint.y)/2 << endl; 
+                    cv::line(grey_image, cv::Point2i(leftOffset, temp->height-8), leftStopPoint, cv::Scalar(255, 0, 0), 1, 8);
+                    cv::line(grey_image, cv::Point2i(rightOffset, temp->height-8),rightStopPoint, cv::Scalar(255, 0, 0), 1, 8);
                 }
 
                 //Check the potential stopline line by using a range
-                int range = 10;
-                if((leftDetectDistance - rightDetectDistance > -range) && (leftDetectDistance - rightDetectDistance < range) && (leftDetectDistance+rightDetectDistance/2 < 250)){
+                int range = 10; // max range between pixels is -10 to 10
+                if((leftStopPoint.y - rightStopPoint.y > -range) && (leftStopPoint.y - rightStopPoint.y < range) && ((leftStopPoint.y+rightStopPoint.y)/2 < 250) && ((leftStopPoint.y+rightStopPoint.y)/2 > 0)){
                     m_stopline = true;
+                    cerr << "#################### Detected Stopline #################" << endl;
                 }else{
                     m_stopline = false;
                 }
+            }
 
                 /*
-                * ################ END OF TEST WITH STOPLINE ################# 
+                * ################ END OF STOPLINE CHECK ################# 
                 */
 
                 //TEST VOTING Find correct poits detected ---------------------------------------
@@ -532,20 +549,20 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                 }
                 //-------------------------------------------------------------------------------
 
-                if (m_debug) {
-                    if (left.x > 0) {
-                        stringstream sstr;
-                        sstr << (temp->width / 2 - left.x);
-                        cv::line(grey_image, cv::Point2i(temp->width / 2, y), left, cv::Scalar(255, 0, 0), 1, 8);
+                // if (m_debug) {
+                //     if (left.x > 0) {
+                //         stringstream sstr;
+                //         sstr << (temp->width / 2 - left.x);
+                //         cv::line(grey_image, cv::Point2i(temp->width / 2, y), left, cv::Scalar(255, 0, 0), 1, 8);
 
 
-                    }
-                    if (right.x > 0) {
-                        stringstream sstr;
-                        sstr << (right.x - temp->width / 2);
-                        cv::line(grey_image, cv::Point2i(temp->width / 2, y), right, cv::Scalar(255, 0, 0), 1, 8);
-                    }
-                }
+                //     }
+                //     if (right.x > 0) {
+                //         stringstream sstr;
+                //         sstr << (right.x - temp->width / 2);
+                //         cv::line(grey_image, cv::Point2i(temp->width / 2, y), right, cv::Scalar(255, 0, 0), 1, 8);
+                //     }
+                // }
 
 
                 if (y == CONTROL_SCANLINE) {
@@ -574,6 +591,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                         m_eSum = 0;
                         m_eOld = 0;
                     }
+
                     /*
                      * Comparing Measurements
                      */
@@ -624,7 +642,15 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                             }
                             sorted.pop_front();
                         }
-                        e = ((l.front().x - temp->width / 2.0) - distance) / distance;
+                        int tempVar = 0;
+                        int Lsize = l.size();
+                        while(l.size() != 0){
+                            tempVar += l.front().x;
+                            l.pop_front();
+                        }
+
+                        e = ((round(tempVar/Lsize) - temp->width / 2.0) - distance) / distance;
+                        
                         /*
                          * LEFT LANE
                          */
@@ -676,7 +702,15 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                             }
                             sorted.pop_front();
                         }
-                        e = (distance - (temp->width / 2.0 - l.front().x)) / distance;
+
+                        int tempVar = 0;
+                        int Lsize = l.size();
+                        while(l.size() != 0){
+                            tempVar += l.front().x;
+                            l.pop_front();
+                        }
+
+                        e = (distance - (temp->width / 2.0) - (round(tempVar/Lsize) / distance));
                     }
 
                 }
@@ -790,7 +824,10 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                 }
 
                 if(m_stopline){
+                    odcore::base::Thread::usleepFor(150000);
                     sendSteeringAngle(steering, 3);
+                    odcore::base::Thread::usleepFor(2000000);
+                    m_stopline = false;
                 }
 
                 // 1. Get most recent vehicle data:
