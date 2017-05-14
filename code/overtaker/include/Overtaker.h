@@ -103,6 +103,7 @@ namespace scaledcars{
                 double m_eSum;
                 double m_eOld;
                 int m_speed;
+                bool m_newStopLine;
                 bool m_stopline;
                 automotive::VehicleControl m_vehicleControl;
         };

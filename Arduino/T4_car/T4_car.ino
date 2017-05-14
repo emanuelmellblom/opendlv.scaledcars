@@ -25,7 +25,7 @@ CRGB leds[NUM_LEDS];
 #define odometer 3
 
 #define MAXFORWSPEED 147
-#define MAXREVSPEED 118
+#define MAXREVSPEED 112
 #define rcController 4
 #define speedPin 2
 //esc
@@ -111,7 +111,7 @@ void setup() {
 	Wire.begin(); // I2C comms
 	encoder.begin();
 	//Serial
-	//Serial2.begin(9600);
+	Serial2.begin(9600);
 	Serial.begin(9600);
 	//Serial.println("g");
 	car->setSpeed(0);
@@ -262,9 +262,10 @@ void loop() {
 
 
 /* controller stuff here */
-	unsigned int steeringCH = pulseIn(rcController,HIGH);
+	//unsigned int steeringCH = pulseIn(rcController,HIGH);
 		
 	unsigned int speedCH = pulseIn(speedPin, HIGH);
+	//Serial.println(SensorData[2]);
 
 	//Serial2.println(steeringCH);
 /* reading from proxy and bluetooth feedback */
@@ -311,7 +312,7 @@ void loop() {
 		ping=false;
 		car->setAngle(100);
 	}
-	//Serial2.println(" delay is"+String(millis()-times));
+	Serial2.println(" delay is"+String(millis()-times));
 }
 /* proxy input is : -60 to 60 for steering angle, 5 bits of which are steering info 3 bits are ms. the frist three bytes should show the speed */
 
@@ -319,6 +320,7 @@ void loop() {
 
 
 /*set global speed limit for safety*/
+
 int speedLimit(int speed) {
 	if (speed / 10 < 140 && speed / 10 > 130) { //if in neutral
 		return 1387;

@@ -78,7 +78,8 @@ int32_t distance = 180; //280, 180
             m_previousTime(),
             m_eSum(0),
             m_eOld(0),
-            m_speed(4),
+            m_speed(5),
+            m_newStopLine(true),
             m_stopline(false),
             m_vehicleControl() {}
 
@@ -361,14 +362,12 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
             vector<cv::Vec4i> lines;
             HoughLinesP(grey_image, lines, 1, CV_PI/180, 5, 20, 30 );
     
-             for( size_t i = 0; i < lines.size(); i++ )
-             {
-              
-    //          line( grey_image, Point(lines[i][0], lines[i][1]),
-      //        Point(lines[0]1], lines[2][3]), Scalar(255,0,0), 3, CV_AA);
-          Vec4i l = lines[i];
-          line( grey_image, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,0,0), 3, 8);     
-              }
+            for( size_t i = 0; i < lines.size(); i++ ){
+				//line( grey_image, Point(lines[i][0], lines[i][1]),
+				//Point(lines[0]1], lines[2][3]), Scalar(255,0,0), 3, CV_AA);
+				Vec4i l = lines[i];
+				line( grey_image, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,0,0), 3, 8);     
+            }
          
         /*
         * ################### END Hough lines Working ###########################
@@ -431,6 +430,69 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
             //Convert MAT grey_image to IplImage named temp.
             IplImage pretemp = grey_image;
             IplImage* temp = &pretemp;
+            
+            
+            
+            
+            /*
+                 * ############### CHECK STOPLINE ####################
+                */
+				CvPoint leftStopPoint, rightStopPoint;
+				CvScalar leftPixel, rightPixel;
+
+				int leftOffset = (temp->width/2)-50;
+				int rightOffset = (temp->width/2)+50;
+
+				leftStopPoint.x = leftOffset;
+				leftStopPoint.y = 0;
+
+				rightStopPoint.x = rightOffset;
+				rightStopPoint.y = 0;
+
+				//Find potential stopline pixels at left offset
+				for (int i = temp->height-12; i > CONTROL_SCANLINE-40; i--){
+					leftPixel = cvGet2D(temp, i, leftOffset);
+					if(leftPixel.val[0] >= 200){
+						leftStopPoint.y = i;
+						break;
+					}
+				}
+                
+				//Find potential stopline pixel at right offset
+				for (int i = temp->height-12; i > CONTROL_SCANLINE-40; i--){
+					rightPixel = cvGet2D(temp, i, rightOffset);
+					if(rightPixel.val[0] >= 200){
+						rightStopPoint.y = i;
+						break;
+					}
+				}
+
+				
+					//Check the potential stopline line by using a range
+				int range = 20; // max range between pixels is -10 to 10
+				cerr<<"distance is measured at "<< (leftStopPoint.y+rightStopPoint.y)/2 <<" and img height is "<< temp->height<<endl;
+				if((leftStopPoint.y - rightStopPoint.y > -range) && (leftStopPoint.y - rightStopPoint.y < range) && ((leftStopPoint.y+rightStopPoint.y)/2 < temp->height) && ((leftStopPoint.y+rightStopPoint.y)/2 > 300)){
+					if(this->m_newStopLine)
+						m_stopline = true;	
+					else
+						m_stopline = false;
+
+					this->m_newStopLine=false;
+						
+					cerr << "#################### Detected Stopline #################" << endl;
+				}else{
+					m_stopline = false;
+					this->m_newStopLine=true;
+				}	
+			
+
+                /*
+                * ################ END OF STOPLINE CHECK ################# 
+                */
+
+            
+            
+            
 
             //TEST VOTING
             //Right Lane
@@ -477,60 +539,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     }
                 }
 
-                /*
-                 * ############### CHECK STOPLINE ####################
-                */
-                if(y == 392){
-                CvPoint leftStopPoint, rightStopPoint;
-                CvScalar leftPixel, rightPixel;
-
-                int leftOffset = (temp->width/2)-50;
-                int rightOffset = (temp->width/2)+50;
-
-                leftStopPoint.x = leftOffset;
-                leftStopPoint.y = 0;
-
-                rightStopPoint.x = rightOffset;
-                rightStopPoint.y = 0;
-
-                //Find potential stopline pixels at left offset
-                for (int i = temp->height-12; i > CONTROL_SCANLINE-40; i--){
-                    leftPixel = cvGet2D(temp, i, leftOffset);
-                    if(leftPixel.val[0] >= 200){
-                        leftStopPoint.y = i;
-                        break;
-                    }
-                }
                 
-                //Find potential stopline pixel at right offset
-                for (int i = temp->height-12; i > CONTROL_SCANLINE-40; i--){
-                    rightPixel = cvGet2D(temp, i, rightOffset);
-                    if(rightPixel.val[0] >= 200){
-                        rightStopPoint.y = i;
-                        break;
-                    }
-                }
-
-                if(m_debug){
-                    //cerr << "****** Stopline Distance = " << ((temp->height-8)-leftStopPoint.y) + ((temp->height-8)-rightStopPoint.y)/2 << endl; 
-                    cv::line(grey_image, cv::Point2i(leftOffset, temp->height-8), leftStopPoint, cv::Scalar(255, 0, 0), 1, 8);
-                    cv::line(grey_image, cv::Point2i(rightOffset, temp->height-8),rightStopPoint, cv::Scalar(255, 0, 0), 1, 8);
-                }
-
-                //Check the potential stopline line by using a range
-                int range = 10; // max range between pixels is -10 to 10
-                if((leftStopPoint.y - rightStopPoint.y > -range) && (leftStopPoint.y - rightStopPoint.y < range) && ((leftStopPoint.y+rightStopPoint.y)/2 < 250) && ((leftStopPoint.y+rightStopPoint.y)/2 > 0)){
-                    m_stopline = true;
-                    cerr << "#################### Detected Stopline #################" << endl;
-                }else{
-                    m_stopline = false;
-                }
-            }
-
-                /*
-                * ################ END OF STOPLINE CHECK ################# 
-                */
-
                 //TEST VOTING Find correct poits detected ---------------------------------------
                 //Right Lane
                 if (right.x > 0) {
@@ -549,23 +558,24 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                 }
                 //-------------------------------------------------------------------------------
 
-                // if (m_debug) {
-                //     if (left.x > 0) {
-                //         stringstream sstr;
-                //         sstr << (temp->width / 2 - left.x);
-                //         cv::line(grey_image, cv::Point2i(temp->width / 2, y), left, cv::Scalar(255, 0, 0), 1, 8);
+                 if (m_debug) {
+                     if (left.x > 0) {//draw lines on left side
+                         stringstream sstr;
+                         sstr << (temp->width / 2 - left.x);
+                         cv::line(grey_image, cv::Point2i(temp->width / 2, y), left, cv::Scalar(255, 0, 0), 1, 8);
 
 
-                //     }
-                //     if (right.x > 0) {
-                //         stringstream sstr;
-                //         sstr << (right.x - temp->width / 2);
-                //         cv::line(grey_image, cv::Point2i(temp->width / 2, y), right, cv::Scalar(255, 0, 0), 1, 8);
-                //     }
-                // }
+                     }
+                     
+                     if (right.x > 0) {//draw line on right side
+                         stringstream sstr;
+                         sstr << (right.x - temp->width / 2);
+                         cv::line(grey_image, cv::Point2i(temp->width / 2, y), right, cv::Scalar(255, 0, 0), 1, 8);
+                     }
+                 }
 
 
-                if (y == CONTROL_SCANLINE) {
+                if (y == CONTROL_SCANLINE) {//when maximum scna distance is readched lower values means that a bigger part of the image is scanned
                     // Calculate the deviation error.
                     if (right.x > 0) {
                         if (!useRightLaneMarking) {
@@ -715,6 +725,14 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
 
                 }
             }
+            
+            
+            if(m_debug){
+				//cerr << "****** Stopline Distance = " << ((temp->height-8)-leftStopPoint.y) + ((temp->height-8)-rightStopPoint.y)/2 << endl; 
+				cv::line(grey_image, cv::Point2i(leftOffset, temp->height-8), leftStopPoint, cv::Scalar(255, 0, 0), 1, 8);
+				cv::line(grey_image, cv::Point2i(rightOffset, temp->height-8),rightStopPoint, cv::Scalar(255, 0, 0), 1, 8);
+			}
+
 
 
 
