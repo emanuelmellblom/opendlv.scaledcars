@@ -32,14 +32,13 @@ int  RcCar::getRatio(float val){
 	
 }
 
-void RcCar::setSpeed(float speed){
+bool RcCar::setSpeed(float speed){
 	int x=getRatio(speed);
 	//Serial.println(x);
-	this->Break(&x);
 	
-
-	
+	bool v=this->Break(&x);	
 	this->currentSpeed=x;
+	return v;
 }
 
 

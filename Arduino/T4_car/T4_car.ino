@@ -65,10 +65,10 @@ void byteDecode(char byteIn, float *speed, float * angle) {
    //Serial2.println("abba  "+String(((float)((byteIn & 224) >> 5)-3)/2));
   *speed = ((float)((byteIn & 224) >> 5) - 3) / 2;
 
-  if (*angle == 48) {
+  /*if (*angle == 48) {
     //command='a';
     *angle = tempAng;
-  }
+  }*/
 }
 
 
@@ -106,7 +106,7 @@ void setup() {
 	encoder.attach(odometer);
 
 	car = new RcCar(MAXFORWSPEED * 10, 1450, MAXREVSPEED * 10, 1200, 1370, esc, steering);
-  //esc.writeMicroseconds(50);
+	FastLED.addLeds<WS2811, led_lights, RGB>(leds, NUM_LEDS);
 
 	Wire.begin(); // I2C comms
 	encoder.begin();
@@ -154,14 +154,12 @@ char I2C[2] = {ultrasonic_Front_Center, ultrasonic_Front_Side};
 char SensorData[7] = {0, 0, 0, 0, 0, 0, 0};
 
 
+
 void loop() {
 		//tick=millis();
-
-		FastLED.addLeds<WS2811, led_lights, RGB>(leds, NUM_LEDS);
-		leds[0] = CRGB::Yellow;
-     	 leds[4] = CRGB::Green;
-		 FastLED.show();
-
+	
+		
+		
 		Wire.beginTransmission(I2C[sensorId]);
 		Wire.write(0x02); // setthe measuring distance in the register two then puts a value to the register
 		Wire.write(14); //
@@ -254,7 +252,7 @@ void loop() {
 
 
 	Wire.beginTransmission(I2C[sensorId]);
-	Wire.write(0x03);
+	Wire.write(0x03);			
 	Wire.endTransmission(1);
 	char v = readI2C(I2C[sensorId]);
 	SensorData[2 + sensorId] = ((v <= 50 && v != 0 ? v : 0) / 2 & 31) | ((2+sensorId)<<5);
@@ -271,13 +269,17 @@ void loop() {
 /* reading from proxy and bluetooth feedback */
 	if (Serial.available()) {
 		char k = Serial.read();
-		if(k!=31){
+		if((k&31)!=31){
 			byteDecode(k, &speeds, &angle);
 			//Serial2.println("inputs is "+String((int)k));
-			
 			//Serial2.println("angle is"+String(angle));
 			//Serial2.println("speed is"+String(speeds));
 			car->setAngle(angle+100);
+		}else{
+			int val=(k&224) >> 5;
+			switch(val){
+				default:0;			
+			}			
 		}
 	}else {
 
@@ -298,21 +300,39 @@ void loop() {
 			car->setRawSpeed(&speedLimit, speedCH);
 		}else{
 			//Serial.println("hello");
-			car->setSpeed(speeds);
+			if(car->setSpeed(1.5)) 
+				for(int i;i<NUM_LEDS;i++)leds[i] = CRGB::Green;
+			else
+				for(int i;i<NUM_LEDS;i++)leds[i] = CRGB::White;
+
+			
+     		
+
 			//delay(1);
 				
-			//car->setSpeed(-1.5);
+			//car->setSleds[0] = CRGB::Blue;
 		//	delay(100);
 			//car->setSpeed(1.5);
 		//	delay(100);
 		}
 	}else {
 		speeds=0;
-		car->setSpeed(0);
+		if(car->setSpeed(0)) 
+				for(int i;i<NUM_LEDS;i++)leds[i] = CRGB::Green;
+		else
+				for(int i;i<NUM_LEDS;i++)leds[i]= CRGB::White;
 		ping=false;
 		car->setAngle(100);
 	}
+
+	FastLED.show();
+
+
+	
 	Serial2.println(" delay is"+String(millis()-times));
+
+
+	
 }
 /* proxy input is : -60 to 60 for steering angle, 5 bits of which are steering info 3 bits are ms. the frist three bytes should show the speed */
 

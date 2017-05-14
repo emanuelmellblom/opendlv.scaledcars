@@ -15,7 +15,7 @@ class RcCar {
 			 * */
 			RcCar(int maxForwSpeed,int minForwSpeed,int maxRevSpeed,int minRevSpeed, int neutral,Servo escPin,Servo steeingServoPin);
 			virtual ~RcCar();
-			void setSpeed(float speed);
+			bool setSpeed(float speed);
 			void setRawSpeed(int(*fptr)(int speed),int speed);
 			void setAngle(int);	 
 			bool isValidMoveSpeed(int);
