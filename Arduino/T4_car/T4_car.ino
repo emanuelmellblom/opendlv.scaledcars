@@ -296,11 +296,11 @@ void loop() {
 		//car->setRawSpeed(&speedLimit, speedCH);
 		//Serial2.println(ping);
 		if(ping){
-			//Serial2.println(speedCH);
+			//Serial.println(speedCH);
 			car->setRawSpeed(&speedLimit, speedCH);
 		}else{
 			//Serial.println("hello");
-			if(car->setSpeed(1.5)) 
+			if(car->setSpeed(speeds)) 
 				for(int i;i<NUM_LEDS;i++)leds[i] = CRGB::Green;
 			else
 				for(int i;i<NUM_LEDS;i++)leds[i] = CRGB::White;

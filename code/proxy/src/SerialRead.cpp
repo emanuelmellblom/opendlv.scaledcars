@@ -14,7 +14,7 @@
 		 
 		 SerialRead::SerialRead():odometerCounter(0){
 				try{
-					odoMem=std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("odoMem", 1));
+					odoMem=std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("odoMem", 2));
 					//this->=static_cast<char*>(sharedMem->getSharedMemory());
 					
 					if (odoMem->isValid()) {
@@ -49,6 +49,12 @@
 						odometerCounter=0;
 					}
 					
+				}
+				
+				if(p[1] > 0){
+					p[0]=0;
+					p[1]=0;
+					odometerCounter=0;
 				}
 			}
 			
