@@ -205,6 +205,43 @@ int32_t distance = 180; //280, 180
             return returnValue;
         }
 
+        char Overtaker::readOdometer(){
+        
+            try {
+                std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory("odoMem"));
+                
+                if (sharedMemory->isValid()) {
+                    odcore::base::Lock l(sharedMemory);
+                    char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+                    char temp=p[0];
+                    p[0]=0;
+                    return temp;
+                }
+            }catch (string &exception) {
+                cerr << "Sensor memory could not created: " << exception << endl;
+            }
+        
+            return 0;
+    
+        }
+
+        void Overtaker::resetOdometer(){
+            try {
+                std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory("odoMem"));
+
+                    {
+                    odcore::base::Lock l(sharedMemory);
+                    char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+                    p[0] = 0; //output to the aruino, output is the byte we send to the arduino.
+                    p[1] = 1;
+                    }
+
+                }catch (string &exception) {
+                cerr << "Odometer memory could not created: " << exception << endl;
+            }
+        }
+
+
         void Overtaker::sendSteeringAngle(double steeringAngle, int speed){ //speed is between 0 and 7. 
 
             cerr << "Original steeringAngle = " << steeringAngle << endl;
@@ -356,22 +393,22 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
 
       
 
-        /*
-        * ######################## Hough Lines Working ###########################
-        */
-            vector<cv::Vec4i> lines;
-            HoughLinesP(grey_image, lines, 1, CV_PI/180, 5, 20, 30 );
+    //     /*
+    //     * ######################## Hough Lines Working ###########################
+    //     */
+    //         vector<cv::Vec4i> lines;
+    //         HoughLinesP(grey_image, lines, 1, CV_PI/180, 5, 20, 30 );
     
-            for( size_t i = 0; i < lines.size(); i++ ){
-				//line( grey_image, Point(lines[i][0], lines[i][1]),
-				//Point(lines[0]1], lines[2][3]), Scalar(255,0,0), 3, CV_AA);
-				Vec4i l = lines[i];
-				line( grey_image, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,0,0), 3, 8);     
-            }
+    //         for( size_t i = 0; i < lines.size(); i++ ){
+				// //line( grey_image, Point(lines[i][0], lines[i][1]),
+				// //Point(lines[0]1], lines[2][3]), Scalar(255,0,0), 3, CV_AA);
+				// Vec4i l = lines[i];
+				// line( grey_image, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,0,0), 3, 8);     
+    //         }
          
-        /*
-        * ################### END Hough lines Working ###########################
-        */ 
+    //     /*
+    //     * ################### END Hough lines Working ###########################
+    //     */ 
 
     
 
@@ -471,7 +508,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
 					//Check the potential stopline line by using a range
 				int range = 20; // max range between pixels is -10 to 10
 				cerr<<"distance is measured at "<< (leftStopPoint.y+rightStopPoint.y)/2 <<" and img height is "<< temp->height<<endl;
-				if((leftStopPoint.y - rightStopPoint.y > -range) && (leftStopPoint.y - rightStopPoint.y < range) && ((leftStopPoint.y+rightStopPoint.y)/2 < temp->height) && ((leftStopPoint.y+rightStopPoint.y)/2 > 300)){
+				if((leftStopPoint.y - rightStopPoint.y > -range) && (leftStopPoint.y - rightStopPoint.y < range) && ((leftStopPoint.y+rightStopPoint.y)/2 < temp->height) && ((leftStopPoint.y+rightStopPoint.y)/2 > 350)){
 					if(this->m_newStopLine)
 						m_stopline = true;	
 					else
@@ -720,7 +757,8 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                             l.pop_front();
                         }
 
-                        e = (distance - (temp->width / 2.0) - (round(tempVar/Lsize) / distance));
+                        //e = ((distance - ((temp->width / 2.0) - (round(tempVar/Lsize))) / distance));
+                        e = (((round(tempVar/Lsize) - temp->width / 2.0) - distance) / distance);
                     }
 
                 }
@@ -776,15 +814,15 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
             if (fabs(e) > 1e-2) {
                 desiredSteering = y;
 
-                if (desiredSteering > 25.0) {
-                    //cerr << "in first if >25" << endl;
-                    desiredSteering = 25.0;
-                }
-                if (desiredSteering < -25.0) {
-                    //cerr << "in second if >25" << endl;
+                // if (desiredSteering > 25.0) {
+                //     //cerr << "in first if >25" << endl;
+                //     desiredSteering = 25.0;
+                // }
+                // if (desiredSteering < -25.0) {
+                //     //cerr << "in second if >25" << endl;
 
-                    desiredSteering = -25.0;
-                }
+                //     desiredSteering = -25.0;
+                // }
             }
 
             if(m_debug){
@@ -819,8 +857,13 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
             bool turnToRightLane = false;
             bool goForward = true;
             bool driveOnLeftLane = false;
+            bool readOdometerFirstTime = false;
+
             //bool onRightLaneTurnLeft = false;
-            int turnCounter = 0;
+            //int turnCounter = 0;
+            int drivedDistance = 0;
+            int drivedDistanceDevided = 0;
+
 
             while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
 
@@ -841,12 +884,7 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     processImage();
                 }
 
-                if(m_stopline){
-                    odcore::base::Thread::usleepFor(150000);
-                    sendSteeringAngle(steering, 3);
-                    odcore::base::Thread::usleepFor(2000000);
-                    m_stopline = false;
-                }
+           
 
                 // 1. Get most recent vehicle data:
 
@@ -869,10 +907,12 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                 //Check for object Simulator
                 //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
 
-                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 40 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
+                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 40 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0 && !turnToLeftLane && !driveOnLeftLane && !turnToRightLane){ //5.5
                     cerr << "### Object detected ###" << endl;
                     //double ulValue = readSensorData(ULTRASONIC_FRONT_CENTER);
                     //cerr << "received " << ulValue << " on ULTRASONIC_FRONT_CENTER" << endl;
+                  
+
 
                     // if(m_simulator){
                     //     vc.setSpeed(1);
@@ -891,6 +931,16 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                 else if(turnToLeftLane){
                     cerr << "### turn to the left lane ###" << endl;
 
+                      if(!readOdometerFirstTime){
+                        resetOdometer();
+                        readOdometerFirstTime = true;
+                    }
+
+                    drivedDistance += readOdometer();
+
+                    cerr <<"Drived distance = "<< drivedDistance << endl;
+
+                 
                     // if(m_simulator){
                     //     vc.setSpeed(1);
                     //     vc.setSteeringWheelAngle((-50*M_PI)/180); //-50
@@ -904,10 +954,12 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     //     // Send container.
                     //     getConference().send(cont1);
                     // }else{
-                        sendSteeringAngle((-50*M_PI)/180, m_speed); //-50
+                        //sendSteeringAngle((-50*M_PI)/180, m_speed); //-50
                         //odcore::base::Thread::usleepFor(100000);
-                        turnCounter++;
-                        cerr <<"turnCounter: "<< turnCounter << endl;
+                        //turnCounter++;
+                        //drivedDistance += readOdometer();
+
+                       //cerr <<"Drived distance = "<< drivedDistance << endl;
                         //sendSteeringAngle(0);
                     //}
 
@@ -915,14 +967,16 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                     //cerr << "IR front right = " << di << endl;
 
                     //if(sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 2.60){
-                    int irValue = readSensorData(1);
+                    int irValue = readSensorData(5);
                     cerr << "received " << irValue << " on INFRARED_FRONT_RIGHT" << endl;
 
-                    if(irValue > 0 ){ //&& readSe
+                    if(irValue > 0 && irValue < 18){ //&& readSe
 
                         cerr << "### Infrared front detected object ###" << endl;
                         driveOnLeftLane = true;
                         turnToLeftLane = false;
+                        readOdometerFirstTime = false;
+                        drivedDistanceDevided = (drivedDistance*2)/3;
                     }
                 }
 
@@ -992,11 +1046,19 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                         //if(sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT) > 0 && sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT) < 0){
                         if((readSensorData(INFRARED_REAR_RIGHT) > 0 || readSensorData(INFRARED_FRONT_RIGHT) == 0) && turnToRightLane > 0){
                         //if(turnCounter > 0){
-                            if(turnCounter>0){
-                                turnCounter--;
+                            // if(turnCounter>0){
+                            //     turnCounter--;
+                            // }
+
+                            if(!readOdometerFirstTime){
+                                resetOdometer();
+                                readOdometerFirstTime = true;
                             }
 
-                            cerr <<"turnCounter" <<turnCounter << endl;
+                            //drivedDistance -= readOdometer();
+                            drivedDistanceDevided -= readOdometer();
+
+                            cerr <<"Drived Distance" << drivedDistance << endl;
                             //double inf = sbd.getValueForKey_MapOfDistances(INFRARED_REAR_RIGHT);
                             //cerr << "Infrared rear right = " <<  inf << endl;
                             //double inf2 = sbd.getValueForKey_MapOfDistances(INFRARED_FRONT_RIGHT);
@@ -1019,9 +1081,17 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                                 odcore::base::Thread::usleepFor(100000);
                                 //sendSteeringAngle(0);
                            // }
-                            if(turnCounter ==0){
+                            // if(turnCounter ==0){
+                            //     turnToRightLane = false;
+                            //     goForward = true;
+                            // }
+
+                            //if(drivedDistance <= 0){
+                            if(drivedDistanceDevided <= 0){
                                 turnToRightLane = false;
                                 goForward = true;
+                                readOdometerFirstTime = false;
+                                drivedDistance = 0;
                             }
 
                         }else{
@@ -1049,7 +1119,14 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
                      //turnToRightLane = false;
                     //goForward = false;
                     cerr << "### Go forward again ###" << endl;
-                    turnCounter = 0;
+                    //turnCounter = 0;
+
+                if(m_stopline){
+                    odcore::base::Thread::usleepFor(150000);
+                    sendSteeringAngle(steering, 3);
+                    odcore::base::Thread::usleepFor(2000000);
+                    m_stopline = false;
+                }
 
                     // if(m_simulator){
                     //     vc.setSpeed(1);
