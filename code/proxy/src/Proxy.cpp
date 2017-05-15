@@ -84,6 +84,12 @@ namespace automotive {
 			try{
 				laneFollower = std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("1", BUFFER_SIZE));
 				overtaking = std::shared_ptr<SharedMemory> (SharedMemoryFactory::createSharedMemory("sensorMemory", BUFFER_SIZE));
+				{
+					odcore::base::Lock o(overtaking);
+					char *p = static_cast<char*>(overtaking->getSharedMemory());
+					for(int i =0;i<BUFFER_SIZE;i++)
+						p[i]=0;
+				}
 				std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::createSharedMemory("dsads", 10));
 				if (overtaking->isValid()) {
 					cerr<<"valid memory \n";
@@ -143,21 +149,21 @@ namespace automotive {
 					 * */
 					string serialInput=handler.readstr();
 					//char input;
-					//if(serialInput.size()>0){ 
-						
+					//if(serialInput.size()>0){
+
 						for (unsigned int i = 1; i < 7; i++){
 							if(handler.get(i) != 0){
 							//input = serialInput.at(0);
 							cerr<<"Id = " << (int)((handler.get(i) >> 5) & 0x07) << " Value = " << (int)(handler.get(i)&31)*2 << endl;
-						
-						//odcore::base::Lock o(overtaking); 
+
+						//odcore::base::Lock o(overtaking);
 						//char *p = static_cast<char*>(overtaking->getSharedMemory());
 						//if( (int)((input >> 5) & 0x07) == 1)
 						//cerr << "input = " << (int)input << endl;
 
 						//char *p = static_cast<char*>(overtaking->getSharedMemory());
-						//cerr << "## Input = " << input << endl;		
-						//if( (int)((input >> 5) & 0x07) == 1)			
+						//cerr << "## Input = " << input << endl;
+						//if( (int)((input >> 5) & 0x07) == 1)
 						p[(int)((handler.get(i) >> 5) & 0x07)]=handler.get(i)&31;
 						//}
 						}
