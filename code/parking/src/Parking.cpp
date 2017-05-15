@@ -166,47 +166,75 @@ namespace scaledcars {
 								const int stage6 = 1000;//initially 1000
                 //const int32_t ULTRASONIC_FRONT_CENTER = 2;
                 //const int32_t ULTRASONIC_FRONT_RIGHT = 3;
-                //const int32_t INFRARED_FRONT_RIGHT = 5;
-                //const int32_t INFRARED_REAR_RIGHT = 1;
+                const int32_t INFRARED_FRONT_RIGHT = 5;
+                const int32_t INFRARED_REAR_RIGHT = 1;
                 const int32_t INFRARED_BACK = 4;
-                //const int32_t ODOMETER = 6;
+                const int32_t ODOMETER = 6;
 
-            TimeStamp currentTime;
-            double deltaTime = (currentTime.toMicroseconds() - lastTime.toMicroseconds())/1000;
-            lastTime = currentTime;
-						parkTimer += deltaTime;
+								if (currentSpaceSize <= 80) {
+									cerr << "Searching" << endl;
+	                // Go forward.
+									sendMotionData(0, 4);
 
-            if (parkTimer < stage1) {
-              sendMotionData(0, 2);
-            }
-            else if (parkTimer < stage1+stage2) {
-              sendMotionData(60, 2);
-            }
-            else if (parkTimer < stage1+stage2+stage3) {
-              sendMotionData(0, 2);
-            }
-            else if (parkTimer < stage1+stage2+stage3+stage4) {
-              sendMotionData(-60, 2);
-            }
-            else if (parkTimer < stage1+stage2+stage3+stage4+stage5) {
-              sendMotionData(60, 4);
-            }
-            else if (parkTimer < stage1+stage2+stage3+stage4+stage5+stage6){
-              sendMotionData(-60, 2);
-            }
-						else if(parkTimer > stage1+stage2+stage3+stage4+stage5+stage6 && parked == false) {
-							int back = readSensorData(INFRARED_BACK);
-							if (back > 10 || back == 0) {
-								sendMotionData(0, 2);
-							} else {
-								sendMotionData(0,3);
-								parked = true;
-							}
-						}
-						else {
-								sendMotionData(0,3);
-						}
+	                // Get odometer value - probably approx in cm
+	                currentSpaceSize += readSensorData(ODOMETER);
+									cerr << currentSpaceSize << endl;
+	                // Check if an object is blocking the space.
+	                // If it is, reset space size
+	                int rear = readSensorData(INFRARED_REAR_RIGHT);
+	                int front = readSensorData(INFRARED_FRONT_RIGHT);
+	                if((rear < 15 && rear != 0) || (front < 15 && front != 0)){
+	                    cerr << "Object detected" << endl;
+	                    currentSpaceSize = 0;
+	                }
 
+	                cerr << "Back IR: " << rear << endl;
+	                cerr << "Front IR: " << front << endl;
+
+								}
+
+
+								else if (currentSpaceSize > 80) {
+
+									TimeStamp currentTime;
+			            double deltaTime = (currentTime.toMicroseconds() - lastTime.toMicroseconds())/1000;
+			            lastTime = currentTime;
+									parkTimer += deltaTime;
+
+									while (parked == false) {
+										if (parkTimer < stage1) {
+				              sendMotionData(0, 2);
+				            }
+				            else if (parkTimer < stage1+stage2) {
+				              sendMotionData(60, 2);
+				            }
+				            else if (parkTimer < stage1+stage2+stage3) {
+				              sendMotionData(0, 2);
+				            }
+				            else if (parkTimer < stage1+stage2+stage3+stage4) {
+				              sendMotionData(-60, 2);
+				            }
+				            else if (parkTimer < stage1+stage2+stage3+stage4+stage5) {
+				              sendMotionData(60, 4);
+				            }
+				            else if (parkTimer < stage1+stage2+stage3+stage4+stage5+stage6){
+				              sendMotionData(-60, 2);
+				            }
+										else if(parkTimer > stage1+stage2+stage3+stage4+stage5+stage6 && parked == false) {
+											int back = readSensorData(INFRARED_BACK);
+											if (back > 10 || back == 0) {
+												sendMotionData(0, 2);
+											} else {
+												sendMotionData(0,3);
+												parked = true;
+											}
+										}
+										else {
+												sendMotionData(0,3);
+										}
+									}
+
+								}
         }
         return odcore::data::dmcp::ModuleExitCodeMessage::OKAY;
     }
