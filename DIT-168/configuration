@@ -40,7 +40,7 @@ global.session.expectedModules = HelloWorldExample,HelloWorldExample:2
 ###############################################################################
 ###############################################################################
 #
-# NEXT, THE CONFIGURATION FOR OpenDaVINCI TOOLS FOLLOWS. 
+# NEXT, THE CONFIGURATION FOR OpenDaVINCI TOOLS FOLLOWS.
 #
 ###############################################################################
 ###############################################################################
@@ -63,7 +63,7 @@ odsupercomponent.pulsetimeack.timeout = 5000 # (in milliseconds)
 # to deliver their respective containers, this yielding time is used to sleep
 # before supercomponent sends the pulse messages the next module in this execution
 # cycle. This value needs to be adjusted for networked simulations to ensure
-# deterministic execution. 
+# deterministic execution.
 odsupercomponent.pulsetimeack.yield = 5000 # (in microseconds)
 
 # List of modules (without blanks) that will not get a pulse message from odsupercomponent.
@@ -123,7 +123,7 @@ odrecorderh264.portbaseforchildprocesses = 29000 # Every spawned child processes
 
 ###############################################################################
 #
-# NEXT, THE CONFIGURATION FOR OpenDaVINCI SIMULATION TOOLS FOLLOWS. 
+# NEXT, THE CONFIGURATION FOR OpenDaVINCI SIMULATION TOOLS FOLLOWS.
 #
 ###############################################################################
 ###############################################################################
@@ -218,7 +218,7 @@ odsimvehicle.LinearBicycleModel.KdynamicBrake=60.0
 ###############################################################################
 ###############################################################################
 #
-# NEXT, THE CONFIGURATION FOR USER APPLICATIONS FOLLOWS. 
+# NEXT, THE CONFIGURATION FOR USER APPLICATIONS FOLLOWS.
 #
 ###############################################################################
 ###############################################################################
@@ -244,7 +244,7 @@ VCR.debug = 2      # set to 0 to disable any windows and further output
 # CONFIGURATION FOR EGOCONTROLLER
 #
 egocontroller.device=keyboard              # Which device for control to be used (currently, joysticks are working only under Linux, e.g. keyboard or /dev/input/js0).
-egocontroller.behavior=linearbicyclenew    # [simple,force,forcesimplifiedbicycle,forcebicycle,linearbicyclenew] Set to force or forcebicycle to get force-based control.            
+egocontroller.behavior=linearbicyclenew    # [simple,force,forcesimplifiedbicycle,forcebicycle,linearbicyclenew] Set to force or forcebicycle to get force-based control.
 egocontroller.minimumTurningRadius=4.24    # Minimum turning radius in m.
 egocontroller.vehicleMass=1700.0           # Mass in kg.
 egocontroller.adherenceCoefficient=100.0   # N per MPS (squared).
@@ -275,18 +275,18 @@ egocontroller.LinearBicycleModelNew.maxSpeed=2.0                   # maxium spee
 # CONFIGURATION FOR PROXY
 #
 #proxy.debug = 0
-#proxy.useRecorder = 0 # 1 = record all captured data directly, 0 otherwise. 
+#proxy.useRecorder = 0 # 1 = record all captured data directly, 0 otherwise.
 #proxy.recorder.output = file://recs/
 #proxy.camera.name = WebCam
 #proxy.camera.type = OpenCV # OpenCV or UEYE
 #proxy.camera.id = 4 # Select here the proper ID for OpenCV
-#proxy.camera.width = 640 #752-UEYE, 640-OpenCV 
+#proxy.camera.width = 640 #752-UEYE, 640-OpenCV
 #proxy.camera.height = 480
 #proxy.camera.bpp = 3 #3- openCV, 1-UEYE
 #NEW CAMERA SETTING
 proxy.camera.dumpSharedData=1
 proxy-camera.camera.debug = 0 #1 = show recording(requires X11), 0 = otherwise.
-proxy-camera.camera.useRecorder = 0 # 1 = record all captured data directly, 0 otherwise. 
+proxy-camera.camera.useRecorder = 0 # 1 = record all captured data directly, 0 otherwise.
 proxy-camera.camera.recorder.output = file://recs/
 proxy-camera.camera.name = DocumentationCamera0
 proxy-camera.camera.type = OpenCV # OpenCV or UEY
@@ -329,7 +329,7 @@ driver.MinParkingDist = 500
 driver.MaxParkingDist = 700
 driver.SafeDistance = 30
 driver.MinSafeDistance = 2
-driver.DesiredDistance1 = 250 
+driver.DesiredDistance1 = 250
 driver.DesiredDistance2 = 700
 driver.DesiredDistance3 = 480
 driver.DesiredDistance4 = 90
@@ -373,4 +373,16 @@ lanedetector.showRes_finalResult = 0
 lanedetector.showRes_createTrajectory = 1
 lanedetector.threshBaseParameter=48
 
-
+###############################################################################
+###############################################################################
+#
+# Configuration for parking
+#
+parking.stage0 = 100
+parking.stage1 = 400
+parking.stage2 = 2400
+parking.stage3 = 0
+parking.stage4 = 1200
+parking.stage5 = 1200
+parking.stage6 = 1000
+parking.minimumTimeToFindSpace = 100;
