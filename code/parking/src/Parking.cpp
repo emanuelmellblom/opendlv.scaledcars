@@ -219,22 +219,22 @@ namespace scaledcars {
 				              sendMotionData(0, 5);
 				            }
 				            else if (parkTimer < stage0+stage1+stage2) {
-				              sendMotionData(60, 2);
+				              sendMotionData(60, 1);
 				            }
 				            else if (parkTimer < stage0+stage1+stage2+stage3) {
 				              sendMotionData(0, 2);
 				            }
 				            else if (parkTimer < stage0+stage1+stage2+stage3+stage4) {
-				              sendMotionData(-60, 2);
+				              sendMotionData(-60, 1);
 				            }
 				            else if (parkTimer < stage0+stage1+stage2+stage3+stage4+stage5) {
-				              sendMotionData(60, 4);
+				              sendMotionData(60, 5);
 				            }
 				            else if (parkTimer < stage0+stage1+stage2+stage3+stage4+stage5+stage6){
 				              sendMotionData(-60, 2);
 				            }
 										else if (parkTimer <  stage0+stage1+stage2+stage3+stage4+stage5+stage6+stage7 ) {
-											sendMotionData(60, 4);
+											sendMotionData(60, 5);
 										}
 										else if (parkTimer <  stage0+stage1+stage2+stage3+stage4+stage5+stage6+stage7+stage8 ) {
 											sendMotionData(-60, 2);
