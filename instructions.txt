@@ -6,4 +6,4 @@ open a terminal in "~/Desktop/opendlv.scaledcars/code/scripts/" then run "sudo d
 
 open a terminal in "~/Desktop/opendlv.scaledcars/docker" then run "sudo make buildIncremental createDockerImage"
 
-
+copy contents of a configuration file from /DIT-168/ to /Home/DIT-168. config70 for standard parking requirement and config 52 for the ultra tight parking
