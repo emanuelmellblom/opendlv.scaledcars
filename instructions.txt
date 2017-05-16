@@ -1,0 +1,9 @@
+open a terminal for checking "ls /dev" for the arduino port
+
+open a terminal for "sudo nano ~/Desktop/opendlv.scaledcars/code/scripts/parking_RealCar.sh" for changing the arduino port
+
+open a terminal in "~/Desktop/opendlv.scaledcars/code/scripts/" then run "sudo docker stop $(sudo docker ps -q)" and then "sudo ./parking_RealCar.sh" and then "sudo pkill -f "xterm"
+
+open a terminal in "~/Desktop/opendlv.scaledcars/docker" then run "sudo make buildIncremental createDockerImage"
+
+

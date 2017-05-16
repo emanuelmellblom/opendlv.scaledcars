@@ -75,27 +75,6 @@ namespace scaledcars {
     void Parking::tearDown() {
         // This method will be call automatically _after_ return from body().
     }
-    
-    
-    char Parking::readOdometer(){
-		
-		try {
-			std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory("odoMem"));
-			if (sharedMemory->isValid()) {
-				odcore::base::Lock l(sharedMemory);
-				char *p = static_cast<char*>(sharedMemory->getSharedMemory());
-				char temp=p[0];
-				p[0]=0;
-				return temp;
-			}
-		}catch (string &exception) {
-			cerr << "Sensor memory could not created: " << exception << endl;
-		}
-		
-		return 0;
-	
-	}
-
 
 	int Parking::readSensorData(int sensorId) {
 		const string NAME = "sensorMemory";
@@ -118,7 +97,7 @@ namespace scaledcars {
 						value = (p[sensorId] & 31) * 2;
 					}
 					returnValue = value;
-					
+
 					break;
 					// Sleep some time.
 					//const uint32_t ONE_SECOND = 1000 * 1000;
@@ -133,7 +112,7 @@ namespace scaledcars {
 
 	void Parking::sendMotionData(double steeringAngle, int speed) {
 
-		cerr << "steeringAngle = " << steeringAngle << endl;
+		//cerr << "steeringAngle = " << steeringAngle << endl;
 		char output = 0x00;
 		output = (((int)(steeringAngle) / 4) + 15) & 31;
 
@@ -160,157 +139,122 @@ namespace scaledcars {
     vector<double> Parking::getFoundGaps() const {
         return m_foundGaps;
     }
-        
+
     // This method will do the main data processing job.
     odcore::data::dmcp::ModuleExitCodeMessage::ModuleExitCode Parking::body() {
-        
-        // Used to step through the hardcoded parking sequence
-        // Measured in milliseconds
-        double parkTimer = 0;
         TimeStamp lastTime;
-        unsigned long m=0;
+				double parkTimer = 0;
+				sendMotionData(0, 3);
+				bool parked = false;
+				//change these as needed- stage 2 and 4 should have same value for it to end up in a parallel position
+				// const int stage1 = 200; // time needed for backing a bit
+				// const int stage2 = 1200; //time needed for first curve
+				// const int stage3 = 800; // time needed for the straight backwards (45 degree inclination to the lane) ( this is only needed if there is not enough y displacement)
+				// const int stage4 = 1200; // time needed for second curve
+				// const int stage5 = 500;
+				// const int stage6 = 500;
+				// working values above without extra stages for 85cm parking space
+				// time needed for going straight back- later replace that with sensor reading telling it when to stop
+				//optional stages for more turning
+				//const int stage6,7,8 etc
+				KeyValueConfiguration kv = getKeyValueConfiguration();
+
+				const int stage0 = kv.getValue<int32_t>("parking.stage0");//100;
+				const int stage1 = kv.getValue<int32_t>("parking.stage1");//400; // adjust this when parking space is found //initially 200
+				const int stage2 = kv.getValue<int32_t>("parking.stage2");//2400; //time needed for first curve	//initially 2200
+				const int stage3 = kv.getValue<int32_t>("parking.stage3");//0; //initially 200
+				const int stage4 = kv.getValue<int32_t>("parking.stage4");//1200; ////initially 1000// time needed for second curve
+				const int stage5 = kv.getValue<int32_t>("parking.stage5");//1200;//initially 1200
+				const int stage6 = kv.getValue<int32_t>("parking.stage6");//1000;//initially 1000
+				const int stage7 = kv.getValue<int32_t>("parking.stage7");//
+				const int stage8 =kv.getValue<int32_t>("parking.stage8");//
+				const int stage9 =kv.getValue<int32_t>("parking.stage9");//
+				const int minimumTimeToFindSpace = kv.getValue<int32_t>("parking.minimumTimeToFindSpace");//6500;
+
+
+				//const int32_t ULTRASONIC_FRONT_CENTER = 2;
+				//const int32_t ULTRASONIC_FRONT_RIGHT = 3;
+				const int32_t INFRARED_FRONT_RIGHT = 5;
+				const int32_t INFRARED_REAR_RIGHT = 1;
+				const int32_t INFRARED_BACK = 4;
+				sendMotionData(0,3);
+				//const int32_t ODOMETER = 6;
+
         while (getModuleStateAndWaitForRemainingTimeInTimeslice() == odcore::data::dmcp::ModuleStateMessage::RUNNING) {
-            
-                //const int32_t ULTRASONIC_FRONT_CENTER = 2;
-                //const int32_t ULTRASONIC_FRONT_RIGHT = 3;
-                const int32_t INFRARED_FRONT_RIGHT = 5;
-                const int32_t INFRARED_REAR_RIGHT = 1;
-                //const int32_t INFRARED_BACK = 1;
-                const int32_t ODOMETER = 6;
-                
-                m+=readOdometer();
-                
-                cerr<<" distance is "<<m*2.15<<endl;
-
-            TimeStamp currentTime;
-            
-            double deltaTime = (currentTime.toMicroseconds() - lastTime.toMicroseconds()) / 1000.0;
-                    
-            lastTime = currentTime;
-
-            // Create vehicle control data.
-            VehicleControl vc;
-
-		cerr << "delta: " << deltaTime << endl;
-
-            // Moving state machine.
-            if (state == Search) {
-		cerr << "Searching" << endl;
-                // Go forward.
-				/*if (m_simulator) {
-					vc.setSpeed(1);
-					vc.setSteeringWheelAngle(0);
-				}
-				else {*/
-					sendMotionData(10, 6);
-				//}
-                    
-                // Get odometer value - probably approx in cm
-                currentSpaceSize += readSensorData(ODOMETER) * deltaTime / 1000;
-                    
-                // Check if an object is blocking the space.
-                // If it is, reset space size
-                int rear = readSensorData(INFRARED_REAR_RIGHT);
-                int front = readSensorData(INFRARED_FRONT_RIGHT);
-                if((rear < 10 && rear != 0) || (front < 10 && front != 0)){ 
-                    cerr << "Object detected" << endl;
-                    currentSpaceSize = 0;
-
-                }
-                
-                
-                    cerr << "Back IR: " << rear << endl;
-                    cerr << "Front IR: " << front << endl;
-                    
-                    cerr << "Space size: " << currentSpaceSize << endl;
-                // If space size is big enough, start parking
-                if(currentSpaceSize > minSpaceSize){
-                    state = Park;
-                    parkTimer = 2000;
-                }
-            }
-            // Parking
-            else{               
-                
-                parkTimer += deltaTime;
 
 
-		cerr << "Parking. Park timer: " << parkTimer << endl;
-                    
-                // If 
-                            
-                // Move forward a bit
+
+								TimeStamp currentTime;
+								double deltaTime = (currentTime.toMicroseconds() - lastTime.toMicroseconds())/1000;
+								lastTime = currentTime;
+
+								if (currentSpaceSize <= minimumTimeToFindSpace) {
+									cerr << "Searching" << endl;
+	                // Go forward.
+									sendMotionData(0, 5);
+
+	                // Get odometer value - probably approx in cm
+	                //currentSpaceSize += readSensorData(ODOMETER);
+									currentSpaceSize += deltaTime;
+
+	                // Check if an object is blocking the space.
+	                // If it is, reset space size
+	                int rear = readSensorData(INFRARED_REAR_RIGHT);
+	                int front = readSensorData(INFRARED_FRONT_RIGHT);
+	                if((rear < 20 && rear != 0) && (front < 20 && front != 0)){
+	                    cerr << "Object detected" << endl;
+	                    currentSpaceSize = 0;
+											cerr << "reset space : " << currentTime.toMicroseconds()/1000<< endl;
+	                }
+								}
+
+								else if (currentSpaceSize > minimumTimeToFindSpace && parked == false) {
+									cerr<<currentTime.toMicroseconds()/1000<<endl;
+									parkTimer += deltaTime;
+									cerr << parkTimer << endl;
+										if (parkTimer < stage0) {
+											sendMotionData(0,3);
+										}
+										else if (parkTimer < stage0+stage1) {
+				              sendMotionData(0, 5);
+				            }
+				            else if (parkTimer < stage0+stage1+stage2) {
+				              sendMotionData(60, 1);
+				            }
+				            else if (parkTimer < stage0+stage1+stage2+stage3) {
+				              sendMotionData(0, 2);
+				            }
+				            else if (parkTimer < stage0+stage1+stage2+stage3+stage4) {
+				              sendMotionData(-60, 1);
+				            }
+				            else if (parkTimer < stage0+stage1+stage2+stage3+stage4+stage5) {
+				              sendMotionData(60, 5);
+				            }
+				            else if (parkTimer < stage0+stage1+stage2+stage3+stage4+stage5+stage6){
+				              sendMotionData(-60, 2);
+				            }
+										else if (parkTimer <  stage0+stage1+stage2+stage3+stage4+stage5+stage6+stage7 ) {
+											sendMotionData(60, 5);
+										}
+										else if (parkTimer <  stage0+stage1+stage2+stage3+stage4+stage5+stage6+stage7+stage8 ) {
+											sendMotionData(-60, 2);
+										}
+										else if(parkTimer > stage0+stage1+stage2+stage3+stage4+stage5+stage6+stage7+stage8+stage9 && parked == false) {
+											int back = readSensorData(INFRARED_BACK);
+											if (back > 10 || back == 0) {
+												sendMotionData(0, 2);
+											} else {
+												sendMotionData(0,3);
+												parked = true;
+											}
+										}
+										else {
+												sendMotionData(0,3);
+										}
 
 
-		if (parkTimer < 1500) {
-
-		cerr << "State 1" << endl;
-					/*if (m_simulator) {
-						vc.setSpeed(0);
-						vc.setSteeringWheelAngle(0);
-					}
-					else {*/
-						sendMotionData(6, 4);
-						// sendSpeed(0)
-					// }
-                }
-
-		else if (parkTimer < 3000) {
-
-		cerr << "State 1" << endl;
-					/*if (m_simulator) {
-						vc.setSpeed(0);
-						vc.setSteeringWheelAngle(0);
-					}
-					else {*/
-						sendMotionData(6, 3);
-						// sendSpeed(0)
-					// }
-                }
-                // Backwards, steering wheel to the right.
-                else if (parkTimer < 4600) {
-		cerr << "State 2" << endl;
-					/*if (m_simulator) {
-						vc.setSpeed(-2);
-						vc.setSteeringWheelAngle(90);
-					}
-					else {*/
-						sendMotionData(55, 0);
-						// sendSpeed(-2)
-					// }
-                }
-                else if (parkTimer < 7500) {
-		cerr << "State 3" << endl;
-					/*if (m_simulator) {
-						vc.setSpeed(-2);
-						vc.setSteeringWheelAngle(-90);
-					}
-					else {*/
-						sendMotionData(-55, 0);
-						// sendSpeed(-2)
-					// }
-                }
-                // Finally, stop again
-                else if (parkTimer < 9000) {
-		cerr << "State 4" << endl;
-					// if (m_simulator) {
-					// 	vc.setSpeed(0);
-					// 	vc.setSteeringWheelAngle(0);
-					// }
-					// else {
-						sendMotionData(6, 3);
-						// sendSpeed(0)
-					// }
-                }
-				// Maybe move forward until front sensor detects something?
-            }
-            // Create container for finally sending the data.
-            // Container c(vc);
-            // // Send container.
-            // getConference().send(c);
+								}
         }
-
         return odcore::data::dmcp::ModuleExitCodeMessage::OKAY;
     }
-
 }
