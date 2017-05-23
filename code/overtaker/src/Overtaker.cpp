@@ -332,10 +332,8 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
 
                 //standard hough line transform
 /*
-                vector<Vec2f>lines;
-                HoughLines(grey_image, lines, 1, CV_PI/180, 150, 0,0);
-                   
-                      for( size_t i = 0; i < lines.size(); i++ )
+#if 0 
+          for( size_t i = 0; i < lines.size(); i++ )
                               {
 
                                 double rho = lines[i][0], theta = lines[i][1];
@@ -362,34 +360,14 @@ void Overtaker::sendMovementSpeedAndAngle(double steeringAngle, double movementS
           Vec4i l = lines[i];
           line( grey_image, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,0,0), 3, 8);     
               }
-//         
+// _#end if        
 
             //  namedWindow( "Source", 1 );
              // imshow( "Source", grey_image);
 
             //namedWindow( "Detected Lines", 1 );
      //      cv::imshow( "Detected Lines", grey_image);                 
-                /*
-
-                for rho,theta in lines[0]:
-                   a = np.cos(theta)
-                   b = np.sin(theta)
-                   x0 = a*rho
-                   y0 = b*rho
-                   x1 = int(x0 + 1000*(-b))
-                   y1 = int(y0 + 1000*(a))
-                   x2 = int(x0 - 1000*(-b))
-                   y2 = int(y0 - 1000*(a))
-               
-               line(img,(x1,y1),(x2,y2),(0,0,255),2) 
-*/
-             //imshow("source", grey_image);
-             //imshow("detected lines", grey_image);
-
-
-             //  waitKey();
-            //}
-
+             
 
                 // vector<vector<cv::Point> > contours;
                 // vector<cv::Vec4i> hierarchy;
