@@ -289,22 +289,22 @@ int32_t distance = 180; //280, 180
 
       
 
-    //     /*
-    //     * ######################## Hough Lines Working ###########################
-    //     */
-    //         vector<cv::Vec4i> lines;
-    //         HoughLinesP(grey_image, lines, 1, CV_PI/180, 5, 20, 30 );
+     /*
+      * ######################## Hough Lines Working ###########################
+      */
+            vector<cv::Vec4i> lines;
+            HoughLinesP(grey_image, lines, 1, CV_PI/180, 5, 20, 30 );
     
-    //         for( size_t i = 0; i < lines.size(); i++ ){
-				// //line( grey_image, Point(lines[i][0], lines[i][1]),
-				// //Point(lines[0]1], lines[2][3]), Scalar(255,0,0), 3, CV_AA);
-				// Vec4i l = lines[i];
-				// line( grey_image, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,0,0), 3, 8);     
-    //         }
+             for( size_t i = 0; i < lines.size(); i++ ){
+				 line( grey_image, Point(lines[i][0], lines[i][1]),
+				 Point(lines[0]1], lines[2][3]), Scalar(255,0,0), 3, CV_AA);
+				 Vec4i l = lines[i];
+				 line( grey_image, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,0,0), 3, 8);     
+             }
          
-    //     /*
-    //     * ################### END Hough lines Working ###########################
-    //     */ 
+    /*
+     * ################### END Hough lines Working ###########################
+     */ 
 
     
 
