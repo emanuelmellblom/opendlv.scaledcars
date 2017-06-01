@@ -1,3 +1,5 @@
+
+
 /**
  * overtaker - Sample application for overtaking obstacles.
  * Copyright (C) 2012 - 2015 Christian Berger
@@ -149,34 +151,23 @@ int32_t distance = 180; //280, 180
             const string NAME = "sensorMemory";
             int returnValue;
 
-            // We are using OpenDaVINCI's std::shared_ptr to automatically release any acquired resources.
             try {
                 std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
 
                 if (sharedMemory->isValid()) {
+
                     uint32_t counter = 30;
+
                     while (counter-- > 0) {
-                        //int id;
                         char value;
-                    {
-                        // Using a scoped lock to lock and automatically unlock a shared memory segment.
                         {
-                        odcore::base::Lock l(sharedMemory);
-                        char *p = static_cast<char*>(sharedMemory->getSharedMemory());
-
-                        char x = p[sensorId];
-                        if(sensorId == 2)
-                        cerr << "x = " << ((int)x&31)*2 << endl;
-
-                        //Extract the sensor value from the received byte
-                        value = (x & 31)*2;
-				
+                            odcore::base::Lock l(sharedMemory);
+                            char *p = static_cast<char*>(sharedMemory->getSharedMemory());
+                            char x = p[sensorId];
+                            value = (x & 31)*2;
                             returnValue = value;
                             break;
-                        //}
                         }
-                    }
-                        // Sleep some time.
                         odcore::base::Thread::usleepFor(1000);
                     }
                 }else{
@@ -190,7 +181,6 @@ int32_t distance = 180; //280, 180
         }
 
         char Overtaker::readOdometer(){
-        
             try {
                 std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory("odoMem"));
                 
@@ -212,14 +202,12 @@ int32_t distance = 180; //280, 180
         void Overtaker::resetOdometer(){
             try {
                 std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory("odoMem"));
-
                     {
                     odcore::base::Lock l(sharedMemory);
                     char *p = static_cast<char*>(sharedMemory->getSharedMemory());
                     p[0] = 0; //output to the aruino, output is the byte we send to the arduino.
                     p[1] = 1;
                     }
-
                 }catch (string &exception) {
                 cerr << "Odometer memory could not created: " << exception << endl;
             }
@@ -227,25 +215,14 @@ int32_t distance = 180; //280, 180
 
 
         void Overtaker::sendSteeringAngle(double steeringAngle, int speed){ //speed is between 0 and 7. 
-
-            cerr << "Original steeringAngle = " << steeringAngle << endl;
-
-            //cerr << "org = " << steeringAngle << endl;
             int steeringAngleDegrees = ((steeringAngle*180)/M_PI);
-            cerr << "steeringAngle = " << steeringAngleDegrees << endl;
-            //char output = 0x00;
-
             char output = ((int)(round(steeringAngleDegrees/4))+15)& 31;
             output |= speed << 5;
-            //m_speed
-            //char output = ((29/4)+15)& 31;
-            cerr << "Output steering = " << (int)output << endl;
-
             const string NAME = "sensorMemory";
+
             try{
                 std::shared_ptr<SharedMemory> sharedMemory(SharedMemoryFactory::attachToSharedMemory(NAME));
                 if (sharedMemory->isValid()) {
-              
                     {
                     odcore::base::Lock l(sharedMemory);
                     char *p = static_cast<char*>(sharedMemory->getSharedMemory());
@@ -289,8 +266,10 @@ int32_t distance = 180; //280, 180
 
                 //standard hough line transform
 /*
-#if 0 
-          for( size_t i = 0; i < lines.size(); i++ )
+                vector<Vec2f>lines;
+                HoughLines(grey_image, lines, 1, CV_PI/180, 150, 0,0);
+                   
+                      for( size_t i = 0; i < lines.size(); i++ )
                               {
 
                                 double rho = lines[i][0], theta = lines[i][1];
@@ -328,25 +307,33 @@ int32_t distance = 180; //280, 180
     //     */ 
 
     
-<<<<<<< HEAD
-=======
-             for( size_t i = 0; i < lines.size(); i++ )
-             {
-              
-    //          line( grey_image, Point(lines[i][0], lines[i][1]),
-      //        Point(lines[0]1], lines[2][3]), Scalar(255,0,0), 3, CV_AA);
-          Vec4i l = lines[i];
-          line( grey_image, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(255,0,0), 3, 8);     
-              }
-// _#end if        
->>>>>>> master
 
             //  namedWindow( "Source", 1 );
              // imshow( "Source", grey_image);
 
             //namedWindow( "Detected Lines", 1 );
      //      cv::imshow( "Detected Lines", grey_image);                 
-             
+                /*
+
+                for rho,theta in lines[0]:
+                   a = np.cos(theta)
+                   b = np.sin(theta)
+                   x0 = a*rho
+                   y0 = b*rho
+                   x1 = int(x0 + 1000*(-b))
+                   y1 = int(y0 + 1000*(a))
+                   x2 = int(x0 - 1000*(-b))
+                   y2 = int(y0 - 1000*(a))
+               
+               line(img,(x1,y1),(x2,y2),(0,0,255),2) 
+*/
+             //imshow("source", grey_image);
+             //imshow("detected lines", grey_image);
+
+
+             //  waitKey();
+            //}
+
 
                 // vector<vector<cv::Point> > contours;
                 // vector<cv::Vec4i> hierarchy;
@@ -417,7 +404,7 @@ int32_t distance = 180; //280, 180
 					//Check the potential stopline line by using a range
 				int range = 20; // max range between pixels is -10 to 10
 				cerr<<"distance is measured at "<< (leftStopPoint.y+rightStopPoint.y)/2 <<" and img height is "<< temp->height<<endl;
-				if((leftStopPoint.y - rightStopPoint.y > -range) && (leftStopPoint.y - rightStopPoint.y < range) && ((leftStopPoint.y+rightStopPoint.y)/2 < temp->height) && ((leftStopPoint.y+rightStopPoint.y)/2 > 350)){
+				if((leftStopPoint.y - rightStopPoint.y > -range) && (leftStopPoint.y - rightStopPoint.y < range) && ((leftStopPoint.y+rightStopPoint.y)/2 < temp->height) && ((leftStopPoint.y+rightStopPoint.y)/2 > 325)){
 					if(this->m_newStopLine)
 						m_stopline = true;	
 					else
@@ -816,7 +803,7 @@ int32_t distance = 180; //280, 180
                 //Check for object Simulator
                 //if(sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) < 7.2 && sbd.getValueForKey_MapOfDistances(ULTRASONIC_FRONT_CENTER) > 0){ //5.5
 
-                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 40 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0 && !turnToLeftLane && !driveOnLeftLane && !turnToRightLane){ //5.5
+                if(readSensorData(ULTRASONIC_FRONT_CENTER) < 45 && readSensorData(ULTRASONIC_FRONT_CENTER) > 0 && !turnToLeftLane && !driveOnLeftLane && !turnToRightLane){ //5.5
                     cerr << "### Object detected ###" << endl;
                     //double ulValue = readSensorData(ULTRASONIC_FRONT_CENTER);
                     //cerr << "received " << ulValue << " on ULTRASONIC_FRONT_CENTER" << endl;
@@ -885,7 +872,7 @@ int32_t distance = 180; //280, 180
                         driveOnLeftLane = true;
                         turnToLeftLane = false;
                         readOdometerFirstTime = false;
-                        drivedDistanceDevided = (drivedDistance*2)/3;
+                        drivedDistanceDevided = (drivedDistance/3);
                     }
                 }
 
@@ -1013,7 +1000,7 @@ int32_t distance = 180; //280, 180
                             //     getConference().send(cont2);
                             //     odcore::base::Thread::usleepFor(90000);
                             // }else{
-                                sendSteeringAngle((45*M_PI)/180, m_speed); //-45
+                                sendSteeringAngle((35*M_PI)/180, m_speed); //-45
                                 odcore::base::Thread::usleepFor(90000);
                             //}
 
